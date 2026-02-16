@@ -106,22 +106,14 @@ export default function LoginPage() {
             <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border)' }} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div>
             <a
               href={`${API_URL}/auth/google`}
-              className="flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium hover:bg-gray-50 transition-colors w-full"
               style={{ borderColor: 'var(--border)' }}
             >
               <FcGoogle size={20} />
-              Google
-            </a>
-            <a
-              href={`${API_URL}/auth/outlook`}
-              className="flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium hover:bg-gray-50 transition-colors"
-              style={{ borderColor: 'var(--border)' }}
-            >
-              <HiOutlineMail size={20} color="#0078D4" />
-              Outlook
+              Continuar con Google
             </a>
           </div>
         </div>

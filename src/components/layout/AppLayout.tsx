@@ -14,11 +14,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p)) || pathname === '/';
+
+  useEffect(() => {
+    // Don't check auth on public pages — avoids race condition with OAuth callback
+    if (!isPublicPage) {
+      checkAuth();
+    }
+  }, [checkAuth, isPublicPage]);
 
   useEffect(() => {
     if (!isLoading) {

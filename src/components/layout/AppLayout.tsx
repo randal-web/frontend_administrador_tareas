@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import Sidebar from './Sidebar';
 
-const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
+const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/auth/callback'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
@@ -25,11 +25,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (!isAuthenticated && !isPublicPage) {
         router.push('/login');
       }
-      if (isAuthenticated && isPublicPage) {
+      if (isAuthenticated && isPublicPage && pathname !== '/auth/callback') {
         router.push('/dashboard');
       }
     }
-  }, [isAuthenticated, isLoading, isPublicPage, router]);
+  }, [isAuthenticated, isLoading, isPublicPage, router, pathname]);
+
+  // Public pages render immediately — no need to wait for auth check
+  if (isPublicPage) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (
@@ -40,10 +45,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
-  }
-
-  if (isPublicPage) {
-    return <>{children}</>;
   }
 
   if (!isAuthenticated) {

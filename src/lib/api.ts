@@ -26,7 +26,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('token');
       const path = window.location.pathname;
-      const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
+      const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/auth/callback'];
       if (!publicPaths.some(p => path === p || path.startsWith(p + '/'))) {
         window.location.href = '/login';
       }

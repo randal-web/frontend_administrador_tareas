@@ -60,9 +60,10 @@ export default function DashboardPage() {
   }, [currentDate, fetchTasksByDate, fetchUpcoming, fetchDaySummary, fetchWeeklyHabits, fetchProjects]);
 
   const goToDate = (days: number) => {
+    const current = new Date(currentDate + 'T00:00:00');
     const newDate = days > 0
-      ? format(addDays(new Date(currentDate), days), 'yyyy-MM-dd')
-      : format(subDays(new Date(currentDate), Math.abs(days)), 'yyyy-MM-dd');
+      ? format(addDays(current, days), 'yyyy-MM-dd')
+      : format(subDays(current, Math.abs(days)), 'yyyy-MM-dd');
     setCurrentDate(newDate);
   };
 
@@ -91,7 +92,7 @@ export default function DashboardPage() {
   }, [filteredTasks]);
 
   // Tomorrow's tasks
-  const tomorrowDate = format(addDays(new Date(currentDate), 1), 'yyyy-MM-dd');
+  const tomorrowDate = format(addDays(new Date(currentDate + 'T00:00:00'), 1), 'yyyy-MM-dd');
   const tomorrowTasks = upcomingTasks.filter(t => t.start_date === tomorrowDate);
   const nextTasks = upcomingTasks.filter(t => t.start_date !== tomorrowDate);
 

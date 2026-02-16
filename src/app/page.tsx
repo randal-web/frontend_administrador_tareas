@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   HiOutlineClipboardCheck,
@@ -10,6 +11,8 @@ import {
   HiOutlineShieldCheck,
   HiOutlineArrowRight,
   HiOutlineCheck,
+  HiOutlineMenu,
+  HiOutlineX,
 } from 'react-icons/hi';
 
 const features = [
@@ -73,11 +76,13 @@ const plans = [
 ];
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Nav */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
+        <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 h-16">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
               <HiOutlineClipboardCheck className="text-white" size={18} />
@@ -90,7 +95,7 @@ export default function Home() {
             <a href="#features" className="hover:text-indigo-600 transition-colors">Funcionalidades</a>
             <a href="#pricing" className="hover:text-indigo-600 transition-colors">Precios</a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3">
             <Link
               href="/login"
               className="text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors px-3 py-2"
@@ -104,23 +109,40 @@ export default function Home() {
               Registrarse
             </Link>
           </div>
+          {/* Mobile hamburger */}
+          <button
+            className="sm:hidden p-2 rounded-lg hover:bg-gray-100"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <HiOutlineX size={22} /> : <HiOutlineMenu size={22} />}
+          </button>
         </div>
+        {/* Mobile dropdown menu */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-3">
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-gray-600 hover:text-indigo-600">Funcionalidades</a>
+            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-gray-600 hover:text-indigo-600">Precios</a>
+            <hr className="border-gray-100" />
+            <Link href="/login" className="block text-sm font-medium text-gray-700 hover:text-indigo-600">Iniciar sesión</Link>
+            <Link href="/register" className="block text-sm font-medium text-white text-center px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600">Registrarse</Link>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-32 pb-20 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium mb-6">
             <HiOutlineLightningBolt size={14} />
             Productividad inteligente para tu día a día
           </div>
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 leading-[1.1]">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 leading-[1.1]">
             Organiza tu vida,{' '}
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
               logra más
             </span>
           </h1>
-          <p className="mt-6 text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-6 text-base sm:text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
             Gestiona tareas, proyectos y hábitos desde un solo lugar. Visualiza tu progreso con tableros Kanban, diagramas de Gantt y un panel que te mantiene enfocado.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -183,7 +205,7 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-24 px-6 bg-gray-50/70">
+      <section id="features" className="py-16 sm:py-24 px-4 sm:px-6 bg-gray-50/70">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -212,7 +234,7 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section className="py-24 px-6">
+      <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -220,7 +242,7 @@ export default function Home() {
               <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">3 pasos</span>
             </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-3 gap-8">
             {[
               { step: '1', title: 'Crea tu cuenta', desc: 'Regístrate gratis con tu email o inicia sesión con Google o Outlook.' },
               { step: '2', title: 'Organiza tu día', desc: 'Añade tareas, asigna prioridades y categorías. Crea proyectos y hábitos.' },
@@ -239,7 +261,7 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-24 px-6 bg-gray-50/70">
+      <section id="pricing" className="py-16 sm:py-24 px-4 sm:px-6 bg-gray-50/70">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -252,9 +274,9 @@ export default function Home() {
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`rounded-2xl p-8 flex flex-col ${
+                className={`rounded-2xl p-6 sm:p-8 flex flex-col ${
                   plan.highlighted
-                    ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-2xl shadow-indigo-200 scale-[1.03] relative'
+                    ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-2xl shadow-indigo-200 md:scale-[1.03] relative'
                     : 'bg-white border border-gray-200'
                 }`}
               >
@@ -302,8 +324,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24 px-6">
+      <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
             ¿Listo para ser más productivo?
@@ -322,7 +343,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-10 px-6">
+      <footer className="border-t border-gray-100 py-10 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">

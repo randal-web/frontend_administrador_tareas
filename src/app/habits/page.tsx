@@ -84,7 +84,7 @@ export default function HabitsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Hábitos</h1>
           <p className="text-sm" style={{ color: 'var(--muted)' }}>
@@ -103,8 +103,9 @@ export default function HabitsPage() {
 
       {/* Weekly Grid */}
       <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+        <div className="overflow-x-auto">
         {/* Table Header */}
-        <div className="grid items-center border-b px-4 py-3" style={{
+        <div className="grid items-center border-b px-4 py-3 min-w-[600px]" style={{
           gridTemplateColumns: '1fr repeat(7, 48px) 64px',
           borderColor: 'var(--border)',
           backgroundColor: 'var(--secondary)',
@@ -132,7 +133,7 @@ export default function HabitsPage() {
           </div>
         )}
         {weeklyHabits.map(habit => (
-          <div key={habit.id} className="grid items-center border-b last:border-0 px-4 py-3 hover:bg-gray-50/50 transition-colors" style={{
+          <div key={habit.id} className="grid items-center border-b last:border-0 px-4 py-3 hover:bg-gray-50/50 transition-colors min-w-[600px]" style={{
             gridTemplateColumns: '1fr repeat(7, 48px) 64px',
             borderColor: 'var(--border)',
           }}>
@@ -181,6 +182,7 @@ export default function HabitsPage() {
             </div>
           </div>
         ))}
+        </div>
       </div>
 
       {/* Streaks summary */}
@@ -217,7 +219,7 @@ export default function HabitsPage() {
       {/* Create/Edit Modal */}
       {createOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => setCreateOpen(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+          <div className="rounded-2xl shadow-xl w-full max-w-md mx-4 sm:mx-auto p-6" style={{ backgroundColor: 'var(--card)' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">{editingHabit ? 'Editar hábito' : 'Nuevo hábito'}</h2>
               <button onClick={() => setCreateOpen(false)} className="p-1 rounded-lg hover:bg-gray-100">
@@ -248,7 +250,7 @@ export default function HabitsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Días de la semana *</label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {dayLabels.map((label, i) => (
                     <button
                       key={i}
@@ -268,7 +270,7 @@ export default function HabitsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Color</label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {colors.map(c => (
                     <button
                       key={c}

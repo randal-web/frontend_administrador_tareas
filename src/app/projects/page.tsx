@@ -47,7 +47,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold">Proyectos</h1>
         <button
           onClick={() => { setShowCreate(true); setEditingId(null); setFormData({ name: '', description: '', color_hex: '#6366f1' }); }}

@@ -55,7 +55,7 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
   const priorityColors: Record<string, string> = { HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#22c55e' };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div
         className="w-full max-w-2xl rounded-xl shadow-xl border max-h-[90vh] overflow-y-auto"
         style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
@@ -87,7 +87,7 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
           )}
 
           {/* Details */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
               <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Prioridad</span>
               <span className="text-sm font-medium flex items-center gap-1">
@@ -114,7 +114,7 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
           {/* Status */}
           <div>
             <h3 className="text-sm font-medium mb-2" style={{ color: 'var(--muted)' }}>Estado</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {statusOptions.map(opt => (
                 <button
                   key={opt.value}

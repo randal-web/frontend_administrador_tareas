@@ -101,14 +101,14 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Panel Principal</h1>
           <p className="text-sm mt-1 capitalize" style={{ color: 'var(--muted)' }}>{formattedDate}</p>
         </div>
         <button
           onClick={() => setCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium transition-colors hover:opacity-90"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium transition-colors hover:opacity-90 w-fit"
           style={{ backgroundColor: 'var(--primary)' }}
         >
           <HiOutlinePlus size={18} />
@@ -117,7 +117,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
           <p className="text-xs font-medium" style={{ color: 'var(--muted)' }}>Total del día</p>
           <p className="text-2xl font-bold mt-1">{daySummary?.total || 0}</p>
@@ -138,9 +138,9 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold mb-3">Hábitos de la semana</h2>
           <div className="space-y-2">
             {weeklyHabits.map(habit => (
-              <div key={habit.id} className="flex items-center gap-3">
-                <span className="text-sm w-32 truncate">{habit.name}</span>
-                <div className="flex gap-1">
+              <div key={habit.id} className="flex items-center gap-3 overflow-x-auto">
+                <span className="text-sm w-24 sm:w-32 truncate flex-shrink-0">{habit.name}</span>
+                <div className="flex gap-1 flex-shrink-0">
                   {habit.week?.map((day, i) => (
                     <button
                       key={day.date}
@@ -164,9 +164,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Main Tasks Area */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {/* Date Navigation & Filter */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -246,7 +246,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Sidebar - Upcoming */}
-        <div className="w-72 flex-shrink-0">
+        <div className="w-full lg:w-72 lg:flex-shrink-0">
           <div className="sticky top-6 space-y-4">
             {/* Tomorrow */}
             <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>

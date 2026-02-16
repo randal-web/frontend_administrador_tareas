@@ -77,7 +77,7 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div
         className="w-full max-w-lg rounded-xl shadow-xl border max-h-[90vh] overflow-y-auto"
         style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
@@ -115,7 +115,7 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">Fecha de inicio</label>
               <input
@@ -138,7 +138,7 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">Prioridad</label>
               <select

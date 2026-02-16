@@ -44,7 +44,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <div className="flex items-center gap-3">
             <div className="w-4 h-4 rounded" style={{ backgroundColor: currentProject.color_hex }} />
@@ -70,7 +70,7 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 rounded-lg w-fit" style={{ backgroundColor: 'var(--secondary)' }}>
+      <div className="flex gap-1 mb-6 p-1 rounded-lg w-fit overflow-x-auto" style={{ backgroundColor: 'var(--secondary)' }}>
         <button
           onClick={() => setTab('board')}
           className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -93,7 +93,7 @@ export default function ProjectDetailPage() {
 
       {/* Board View (Kanban) */}
       {tab === 'board' && projectBoard && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statusColumns.map(col => {
             const tasks = projectBoard[col.key as keyof typeof projectBoard] || [];
             return (
@@ -171,7 +171,7 @@ export default function ProjectDetailPage() {
 
               return (
                 <div key={task.id} className="flex items-center gap-3">
-                  <span className="text-xs w-40 truncate" title={task.title}>{task.title}</span>
+                  <span className="text-xs w-24 sm:w-40 truncate flex-shrink-0" title={task.title}>{task.title}</span>
                   <div className="flex-1 relative h-6">
                     <div
                       className="absolute h-full rounded-md flex items-center px-2"

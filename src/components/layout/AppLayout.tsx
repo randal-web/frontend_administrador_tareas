@@ -5,12 +5,13 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import Sidebar from './Sidebar';
+import { HiOutlineMenu } from 'react-icons/hi';
 
 const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/auth/callback'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
-  const { sidebarOpen } = useUIStore();
+  const { sidebarOpen, setMobileSidebarOpen } = useUIStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -57,12 +58,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
       <Sidebar />
+
+      {/* Mobile top bar with hamburger */}
+      <div className="fixed top-0 left-0 right-0 z-20 flex items-center h-14 px-4 md:hidden border-b"
+        style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)' }}
+      >
+        <button
+          onClick={() => setMobileSidebarOpen(true)}
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          <HiOutlineMenu size={22} />
+        </button>
+        <span className="ml-3 font-semibold text-sm">TaskManager</span>
+      </div>
+
       <main
         className={`transition-all duration-300 min-h-screen ${
-          sidebarOpen ? 'ml-64' : 'ml-20'
+          sidebarOpen ? 'md:ml-64' : 'md:ml-20'
         }`}
       >
-        <div className="p-6">{children}</div>
+        <div className="p-4 pt-18 md:p-6 md:pt-6">{children}</div>
       </main>
     </div>
   );

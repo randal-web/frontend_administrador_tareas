@@ -40,7 +40,7 @@ const categoryConfig: Record<string, { label: string; color: string; bg: string 
 };
 
 const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
-  TODO: { label: 'Por hacer', color: '#6366f1', dot: '#6366f1' },
+  TODO: { label: 'Por hacer', color: '#106AFF', dot: '#106AFF' },
   IN_PROGRESS: { label: 'En curso', color: '#3b82f6', dot: '#3b82f6' },
   REVIEW: { label: 'Revisión', color: '#f59e0b', dot: '#f59e0b' },
   DONE: { label: 'Completadas', color: '#22c55e', dot: '#22c55e' },
@@ -280,12 +280,12 @@ export default function DashboardPage() {
                     <button
                       onClick={() => toggleStatusCollapse(status)}
                       className="flex items-center gap-2 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                      style={{ backgroundColor: cfg.color + '12', color: cfg.color }}
+                      style={{ backgroundColor: cfg.color + '12', color: cfg.color, border: '1.5px solid ' + cfg.color + '40' }}
                     >
                       {isCollapsed ? <HiOutlineChevronRight size={14} /> : <HiOutlineChevronDown size={14} />}
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.dot }} />
                       {cfg.label}
-                      <span className="ml-1 text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: cfg.color + '20' }}>
+                      <span className="ml-1 text-xs font-medium px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: cfg.color }}>
                         {totalByStatus[status] || 0}
                       </span>
                     </button>

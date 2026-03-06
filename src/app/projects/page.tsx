@@ -58,8 +58,8 @@ export default function ProjectsPage() {
         </div>
         <button
           onClick={() => { setShowCreate(true); setEditingId(null); setFormData({ name: '', description: '', color_hex: '#6366f1' }); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          style={{ backgroundColor: 'var(--foreground)', color: 'var(--bg)' }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-white"
+          style={{ backgroundColor: 'var(--foreground)' }}
         >
           <HiOutlinePlus size={16} />
           Nuevo Proyecto

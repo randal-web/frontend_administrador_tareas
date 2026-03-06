@@ -99,8 +99,8 @@ export default function HabitsPage() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          style={{ backgroundColor: 'var(--foreground)', color: 'var(--bg)' }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-white"
+          style={{ backgroundColor: 'var(--foreground)' }}
         >
           <HiOutlinePlus size={16} />
           Nuevo Hábito

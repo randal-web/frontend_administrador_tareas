@@ -10,12 +10,16 @@
   --success: #22c55e;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --border: #e2e8f0;
+  --border: #e5e7eb;
   --muted: #94a3b8;
   --card: #ffffff;
-  --sidebar-bg: #1e1b4b;
-  --sidebar-text: #e0e7ff;
-  --sidebar-active: #4338ca;
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #374151;
+  --sidebar-active: #f3f0ff;
+  --sidebar-active-text: #6366f1;
+  --sidebar-section: #9ca3af;
+  --sidebar-hover: #f9fafb;
+  --sidebar-border: #f3f4f6;
 }
 
 @theme inline {

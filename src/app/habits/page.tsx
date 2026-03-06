@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useHabitStore } from '@/stores/habitStore';
-import { Habit } from '@/types';
-import { format, startOfWeek, addDays } from 'date-fns';
+import { Habit, WeekDay } from '@/types';
+import { format, startOfWeek, addDays, addWeeks, isBefore, isAfter, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiCheck, HiX } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiCheck, HiX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 
-const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-// dayIndex: 0=Mon, 1=Tue, ..., 6=Sun (matches backend)
+const dayLabelsShort = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const dayLabelsFull = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const dayIndices = [0, 1, 2, 3, 4, 5, 6];
 
 const colors = [
@@ -22,10 +22,12 @@ export default function HabitsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [form, setForm] = useState({ name: '', description: '', frequency: [...dayIndices] as number[], color: '#6366f1' });
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const currentWeekStart = startOfWeek(addWeeks(today, weekOffset), { weekStartsOn: 1 });
+  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
+  const isCurrentWeek = weekOffset === 0;
 
   useEffect(() => {
     fetchHabits();
@@ -81,140 +83,211 @@ export default function HabitsPage() {
     }));
   };
 
+  // Compute streak for a habit (consecutive days completed backwards from today)
+  const getStreak = (habit: { week?: WeekDay[] }) => {
+    const completedCount = (habit.week || []).filter(d => d.is_completed).length;
+    return completedCount;
+  };
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Hábitos</h1>
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>
-            Semana del {format(weekStart, "d 'de' MMMM", { locale: es })}
-          </p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>Gestiona tus hábitos diarios</p>
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium"
-          style={{ backgroundColor: 'var(--primary)' }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          style={{ backgroundColor: 'var(--foreground)', color: 'var(--bg)' }}
         >
-          <HiOutlinePlus size={18} />
-          Nuevo hábito
+          <HiOutlinePlus size={16} />
+          Nuevo Hábito
         </button>
       </div>
 
-      {/* Weekly Grid */}
-      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-        <div className="overflow-x-auto">
-        {/* Table Header */}
-        <div className="grid items-center border-b px-4 py-3 min-w-[600px]" style={{
-          gridTemplateColumns: '1fr repeat(7, 48px) 64px',
-          borderColor: 'var(--border)',
-          backgroundColor: 'var(--secondary)',
-        }}>
-          <span className="text-xs font-semibold uppercase" style={{ color: 'var(--muted)' }}>Hábito</span>
-          {weekDates.map((date, i) => {
-            const isToday = format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
-            return (
-              <div key={i} className={`text-center ${isToday ? 'font-bold' : ''}`}>
-                <div className="text-[10px] uppercase" style={{ color: 'var(--muted)' }}>{dayLabels[i]}</div>
-                <div className={`text-xs mt-0.5 ${isToday ? 'text-indigo-600 font-bold' : ''}`}>
-                  {format(date, 'd')}
-                </div>
-              </div>
-            );
-          })}
-          <span></span>
+      {/* Week Navigation + Day Headers */}
+      <div className="rounded-xl border p-3 sm:p-4 mb-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+        {/* Navigation */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => setWeekOffset(prev => prev - 1)}
+            className="flex items-center gap-1 text-sm font-medium hover:underline"
+            style={{ color: 'var(--foreground)' }}
+          >
+            <HiOutlineChevronLeft size={14} />
+            <span className="hidden sm:inline">Semana anterior</span>
+            <span className="sm:hidden">Anterior</span>
+          </button>
+          <span className="text-sm font-semibold">
+            {isCurrentWeek ? 'Esta semana' : `Semana del ${format(currentWeekStart, "d 'de' MMMM", { locale: es })}`}
+          </span>
+          <button
+            onClick={() => setWeekOffset(prev => prev + 1)}
+            className="flex items-center gap-1 text-sm font-medium hover:underline"
+            style={{ color: 'var(--foreground)' }}
+          >
+            <span className="hidden sm:inline">Semana siguiente</span>
+            <span className="sm:hidden">Siguiente</span>
+            <HiOutlineChevronRight size={14} />
+          </button>
         </div>
 
-        {/* Habit Rows */}
-        {weeklyHabits.length === 0 && !loading && (
-          <div className="text-center py-12" style={{ color: 'var(--muted)' }}>
-            <p className="text-sm">No tienes hábitos aún.</p>
-            <p className="text-xs mt-1">Crea uno para empezar a hacer seguimiento.</p>
-          </div>
-        )}
-        {weeklyHabits.map(habit => (
-          <div key={habit.id} className="grid items-center border-b last:border-0 px-4 py-3 hover:bg-gray-50/50 transition-colors min-w-[600px]" style={{
-            gridTemplateColumns: '1fr repeat(7, 48px) 64px',
-            borderColor: 'var(--border)',
-          }}>
-            {/* Habit Name */}
-            <div>
-              <span className="text-sm font-medium">{habit.name}</span>
-              {habit.description && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{habit.description}</p>
-              )}
-            </div>
-
-            {/* Day Checkboxes */}
-            {(habit.week || []).map((day) => {
-              const isScheduled = habit.frequency.includes(day.dayIndex);
-              const completed = day.is_completed;
-              const dateStr = day.date;
-
-              if (!isScheduled) {
-                return <div key={dateStr} className="flex justify-center"><span className="text-gray-200">—</span></div>;
-              }
-
+        {/* Day Headers */}
+        <div className="overflow-x-auto -mx-3 px-3 sm:-mx-4 sm:px-4">
+          <div className="grid items-center min-w-[500px]" style={{ gridTemplateColumns: '120px repeat(7, 1fr)' }}>
+            <span className="text-xs" style={{ color: 'var(--muted)' }}>Hábito</span>
+            {weekDates.map((date, i) => {
+              const isToday = isSameDay(date, today);
               return (
-                <div key={dateStr} className="flex justify-center">
-                  <button
-                    onClick={() => handleToggle(habit.id, dateStr)}
-                    className={`w-7 h-7 rounded-md border-2 flex items-center justify-center transition-all ${
-                      completed
-                        ? 'border-green-500 bg-green-500 text-white'
-                        : 'border-gray-300 hover:border-indigo-400'
-                    }`}
-                  >
-                    {completed && <HiCheck size={14} />}
-                  </button>
+                <div key={i} className="text-center">
+                  <div className="text-xs" style={{ color: 'var(--muted)' }}>{dayLabelsShort[i]}</div>
+                  <div className="mt-0.5">
+                    {isToday ? (
+                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold text-white bg-black">
+                        {format(date, 'd')}
+                      </span>
+                    ) : (
+                      <span className="text-sm">{format(date, 'd')}</span>
+                    )}
+                  </div>
                 </div>
               );
             })}
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-1">
-              <button onClick={() => openEdit(habit)} className="p-1.5 rounded-md hover:bg-gray-100 transition-colors" style={{ color: 'var(--muted)' }}>
-                <HiOutlinePencil size={14} />
-              </button>
-              <button onClick={() => handleDelete(habit.id)} className="p-1.5 rounded-md hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors">
-                <HiOutlineTrash size={14} />
-              </button>
-            </div>
           </div>
-        ))}
         </div>
       </div>
 
-      {/* Streaks summary */}
-      {habits.length > 0 && (
-        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <p className="text-2xl font-bold">{habits.length}</p>
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>Hábitos activos</p>
-          </div>
-          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <p className="text-2xl font-bold text-green-600">
-              {weeklyHabits.reduce((acc, h) => acc + (h.week || []).filter(d => d.is_completed).length, 0)}
-            </p>
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>Completados esta semana</p>
-          </div>
-          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <p className="text-2xl font-bold text-amber-600">
-              {weeklyHabits.reduce((acc, h) => acc + (h.week || []).filter(d => h.frequency.includes(d.dayIndex) && !d.is_completed).length, 0)}
-            </p>
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>Pendientes esta semana</p>
-          </div>
-          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <p className="text-2xl font-bold text-indigo-600">
-              {weeklyHabits.length > 0 ? Math.round(
-                (weeklyHabits.reduce((acc, h) => acc + (h.week || []).filter(d => d.is_completed).length, 0) /
-                  Math.max(1, weeklyHabits.reduce((acc, h) => acc + (h.week || []).filter(d => h.frequency.includes(d.dayIndex)).length, 0))) * 100
-              ) : 0}%
-            </p>
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>Cumplimiento</p>
-          </div>
+      {/* Habit Rows */}
+      {weeklyHabits.length === 0 && !loading && (
+        <div className="text-center py-12 rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', color: 'var(--muted)' }}>
+          <p className="text-sm">No tienes hábitos aún.</p>
+          <p className="text-xs mt-1">Crea uno para empezar a hacer seguimiento.</p>
         </div>
       )}
+
+      <div className="space-y-3">
+        {weeklyHabits.map(habit => {
+          const streak = getStreak(habit);
+          const scheduledThisWeek = (habit.week || []).filter(d => habit.frequency.includes(d.dayIndex)).length;
+          const completedThisWeek = (habit.week || []).filter(d => habit.frequency.includes(d.dayIndex) && d.is_completed).length;
+
+          return (
+            <div
+              key={habit.id}
+              className="rounded-xl border p-4 group/card"
+              style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+            >
+              {/* Main row: name + day indicators */}
+              <div className="overflow-x-auto -mx-4 px-4">
+                <div className="grid items-center min-w-[500px]" style={{ gridTemplateColumns: '120px repeat(7, 1fr)' }}>
+                  {/* Habit info */}
+                  <div className="pr-3">
+                    <h3 className="text-sm font-bold leading-tight">{habit.name}</h3>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-xs">🔥</span>
+                      <span className="text-xs" style={{ color: 'var(--muted)' }}>{streak} días</span>
+                    </div>
+                  </div>
+
+                {/* Day indicators */}
+                {(habit.week || []).map((day) => {
+                  const isScheduled = habit.frequency.includes(day.dayIndex);
+                  const completed = day.is_completed;
+                  const dayDate = new Date(day.date + 'T12:00:00');
+                  const isToday = isSameDay(dayDate, today);
+                  const isPast = isBefore(dayDate, today) && !isToday;
+                  const isFuture = isAfter(dayDate, today);
+
+                  if (!isScheduled) {
+                    return (
+                      <div key={day.date} className="flex justify-center">
+                        <span className="text-sm" style={{ color: 'var(--muted)' }}>-</span>
+                      </div>
+                    );
+                  }
+
+                  if (completed) {
+                    // Green filled square with checkmark
+                    return (
+                      <div key={day.date} className="flex justify-center">
+                        <button
+                          onClick={() => handleToggle(habit.id, day.date)}
+                          className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition-colors"
+                        >
+                          <HiCheck size={16} strokeWidth={2} />
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  if (isToday) {
+                    // Blue outline circle — today not yet completed
+                    return (
+                      <div key={day.date} className="flex justify-center">
+                        <button
+                          onClick={() => handleToggle(habit.id, day.date)}
+                          className="w-8 h-8 rounded-full border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 transition-colors"
+                        />
+                      </div>
+                    );
+                  }
+
+                  if (isPast) {
+                    // Pink/salmon circle — missed
+                    return (
+                      <div key={day.date} className="flex justify-center">
+                        <button
+                          onClick={() => handleToggle(habit.id, day.date)}
+                          className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 transition-colors"
+                        />
+                      </div>
+                    );
+                  }
+
+                  // Gray circle — future
+                  return (
+                    <div key={day.date} className="flex justify-center">
+                      <button
+                        onClick={() => handleToggle(habit.id, day.date)}
+                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                      />
+                    </div>
+                  );
+                })}
+                </div>
+              </div>
+
+              {/* Bottom row: assigned days + actions + weekly progress */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-3 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px]" style={{ color: 'var(--muted)' }}>Días asignados:</span>
+                  <div className="flex gap-1.5">
+                    {dayLabelsShort.map((label, i) => (
+                      habit.frequency.includes(i) ? (
+                        <span key={i} className="text-[11px] font-semibold">{label}</span>
+                      ) : null
+                    ))}
+                  </div>
+                  {/* Edit/Delete on hover */}
+                  <div className="flex gap-0.5 ml-2 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                    <button onClick={() => openEdit(habit)} className="p-1 rounded hover:bg-gray-100 transition-colors" style={{ color: 'var(--muted)' }}>
+                      <HiOutlinePencil size={13} />
+                    </button>
+                    <button onClick={() => handleDelete(habit.id)} className="p-1 rounded hover:bg-red-50 text-red-400 transition-colors">
+                      <HiOutlineTrash size={13} />
+                    </button>
+                  </div>
+                </div>
+                <span className="text-[11px] font-medium" style={{ color: 'var(--muted)' }}>
+                  {completedThisWeek}/{scheduledThisWeek} esta semana
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Create/Edit Modal */}
       {createOpen && (
@@ -251,7 +324,7 @@ export default function HabitsPage() {
               <div>
                 <label className="block text-sm font-medium mb-2">Días de la semana *</label>
                 <div className="flex flex-wrap gap-2">
-                  {dayLabels.map((label, i) => (
+                  {dayLabelsFull.map((label, i) => (
                     <button
                       key={i}
                       type="button"

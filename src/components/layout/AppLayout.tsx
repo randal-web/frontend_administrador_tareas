@@ -5,12 +5,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import Sidebar from './Sidebar';
-import { HiOutlineMenu } from 'react-icons/hi';
+import { HiOutlineMenu, HiOutlineSearch, HiOutlineBell, HiOutlineLogout } from 'react-icons/hi';
 
 const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/auth/callback'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const { isAuthenticated, isLoading, checkAuth, user, logout } = useAuthStore();
   const { sidebarOpen, setMobileSidebarOpen } = useUIStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -18,7 +18,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isPublicPage = publicPaths.some(p => pathname.startsWith(p)) || pathname === '/';
 
   useEffect(() => {
-    // Don't check auth on public pages — avoids race condition with OAuth callback
     if (!isPublicPage) {
       checkAuth();
     }
@@ -35,7 +34,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, isLoading, isPublicPage, router, pathname]);
 
-  // Public pages render immediately — no need to wait for auth check
   if (isPublicPage) {
     return <>{children}</>;
   }
@@ -55,30 +53,72 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return null;
   }
 
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = '/login';
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
       <Sidebar />
 
-      {/* Mobile top bar with hamburger */}
-      <div className="fixed top-0 left-0 right-0 z-20 flex items-center h-14 px-4 md:hidden border-b"
-        style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)' }}
-      >
-        <button
-          onClick={() => setMobileSidebarOpen(true)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <HiOutlineMenu size={22} />
-        </button>
-        <span className="ml-3 font-semibold text-sm">TaskManager</span>
-      </div>
-
-      <main
-        className={`transition-all duration-300 min-h-screen ${
-          sidebarOpen ? 'md:ml-64' : 'md:ml-20'
+      <div
+        className={`transition-all duration-300 min-h-screen flex flex-col ${
+          sidebarOpen ? 'md:ml-[220px]' : 'md:ml-[220px]'
         }`}
       >
-        <div className="p-4 pt-18 md:p-6 md:pt-6">{children}</div>
-      </main>
+        {/* Top Bar */}
+        <header className="sticky top-0 z-20 h-14 flex items-center justify-between px-4 md:px-6 border-b"
+          style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+        >
+          {/* Left: hamburger (mobile) + greeting */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors md:hidden"
+            >
+              <HiOutlineMenu size={20} />
+            </button>
+            <h2 className="text-base font-bold text-[var(--foreground)]">
+              Bienvenido <span className="uppercase">{user?.full_name?.split(' ')[0] || 'Usuario'}</span>
+            </h2>
+          </div>
+
+          {/* Right: search, notifications, user */}
+          <div className="flex items-center gap-2">
+            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
+              <HiOutlineSearch size={18} />
+            </button>
+            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 relative">
+              <HiOutlineBell size={18} />
+            </button>
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-lg hover:bg-red-50 transition-colors text-gray-400 hover:text-red-500"
+              title="Cerrar sesión"
+            >
+              <HiOutlineLogout size={18} />
+            </button>
+            <div className="hidden sm:flex items-center gap-2 ml-1 pl-2 border-l" style={{ borderColor: 'var(--border)' }}>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                {initials}
+              </div>
+              <span className="text-sm font-medium text-[var(--foreground)]">
+                {user?.full_name?.split(' ')[0]?.toUpperCase()}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 p-4 md:p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

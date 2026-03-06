@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { format, addDays } from 'date-fns';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { format, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useTaskStore } from '@/stores/taskStore';
 import { useHabitStore } from '@/stores/habitStore';
@@ -12,6 +12,7 @@ import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import {
   HiOutlineChevronDown,
   HiOutlineChevronRight,
+  HiOutlineChevronLeft,
   HiOutlinePlus,
   HiOutlineFilter,
   HiOutlineCheck,
@@ -21,6 +22,9 @@ import {
   HiOutlineDotsHorizontal,
   HiOutlineDotsVertical,
   HiOutlineStar,
+  HiOutlineEye,
+  HiOutlinePencil,
+  HiOutlineTrash,
 } from 'react-icons/hi';
 
 const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -52,6 +56,7 @@ export default function DashboardPage() {
     fetchUpcoming,
     fetchDaySummary,
     toggleStatus,
+    deleteTask,
   } = useTaskStore();
   const { weeklyHabits, habits, fetchWeeklyHabits, fetchHabits, toggleLog } = useHabitStore();
   const { projects, fetchProjects } = useProjectStore();
@@ -62,6 +67,19 @@ export default function DashboardPage() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [collapsedStatuses, setCollapsedStatuses] = useState<Record<string, boolean>>({});
   const [collapsedProjects, setCollapsedProjects] = useState<Record<string, boolean>>({});
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   useEffect(() => {
     fetchTasksByDate(currentDate);
@@ -129,13 +147,46 @@ export default function DashboardPage() {
   }, [weeklyHabits, todayStr]);
 
   // Tomorrow / upcoming tasks breakdown
-  const tomorrowDate = format(addDays(new Date(currentDate + 'T00:00:00'), 1), 'yyyy-MM-dd');
-  const tomorrowTasks = upcomingTasks.filter(t => t.start_date === tomorrowDate);
-  const futureTasks = upcomingTasks.filter(t => t.start_date && t.start_date > tomorrowDate);
+  const currentDateObj = new Date(currentDate + 'T00:00:00');
+  const tomorrowDate = format(addDays(currentDateObj, 1), 'yyyy-MM-dd');
+  const isToday = currentDate === format(new Date(), 'yyyy-MM-dd');
+
+  // Filter upcoming: tasks visible on tomorrow (start_date <= tomorrow && (end_date >= tomorrow || no end_date))
+  const tomorrowTasks = upcomingTasks.filter(t => {
+    const start = t.start_date || '';
+    const end = t.end_date || start;
+    return start <= tomorrowDate && end >= tomorrowDate;
+  });
+  // Filter upcoming: tasks visible after tomorrow
+  const futureTasks = upcomingTasks.filter(t => {
+    const start = t.start_date || '';
+    const end = t.end_date || start;
+    // Visible on at least one day after tomorrow
+    return end > tomorrowDate || start > tomorrowDate;
+  });
+
+  const navigateDate = (offset: number) => {
+    const newDate = offset === 0
+      ? new Date()
+      : addDays(currentDateObj, offset);
+    setCurrentDate(format(newDate, 'yyyy-MM-dd'));
+  };
 
   const handleTaskClick = (taskId: string) => {
     setSelectedTaskId(taskId);
     setDetailModalOpen(true);
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('¿Eliminar esta tarea?')) return;
+    await deleteTask(taskId);
+    setOpenMenuId(null);
+  };
+
+  const handleEditTask = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setDetailModalOpen(true);
+    setOpenMenuId(null);
   };
 
   return (
@@ -164,14 +215,31 @@ export default function DashboardPage() {
               >
                 <HiOutlineViewList size={16} />
               </button>
-              <button
-                onClick={() => setCurrentDate(new Date().toISOString().split('T')[0])}
-                className="flex items-center gap-1.5 px-3 py-1.5 ml-1 rounded-lg text-sm font-medium border transition-colors hover:bg-gray-50"
-                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
-              >
-                <HiOutlineCalendar size={14} />
-                Hoy
-              </button>
+              <div className="flex items-center ml-1 rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}>
+                <button
+                  onClick={() => navigateDate(-1)}
+                  className="p-1.5 hover:bg-gray-100 transition-colors border-r"
+                  style={{ borderColor: 'var(--border)' }}
+                  title="Día anterior"
+                >
+                  <HiOutlineChevronLeft size={14} />
+                </button>
+                <button
+                  onClick={() => navigateDate(0)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-gray-50 ${isToday ? '' : 'text-indigo-600'}`}
+                >
+                  <HiOutlineCalendar size={14} />
+                  Hoy
+                </button>
+                <button
+                  onClick={() => navigateDate(1)}
+                  className="p-1.5 hover:bg-gray-100 transition-colors border-l"
+                  style={{ borderColor: 'var(--border)' }}
+                  title="Día siguiente"
+                >
+                  <HiOutlineChevronRight size={14} />
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -201,8 +269,8 @@ export default function DashboardPage() {
               </button>
             </div>
           ) : viewMode === 'list' ? (
-          <div className="space-y-2">
-            {Object.entries(groupedByStatus).map(([status, projectGroups]) => {
+            <div className="space-y-2">
+              {Object.entries(groupedByStatus).map(([status, projectGroups]) => {
                 const cfg = statusConfig[status];
                 const isCollapsed = collapsedStatuses[status];
 
@@ -253,10 +321,10 @@ export default function DashboardPage() {
 
                               {/* Task Table */}
                               {!isProjectCollapsed && (
-                                <div className="ml-4 mr-2 mb-2 rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+                                <div className="ml-4 mr-2 mb-2 rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)', backgroundColor: 'white' }}>
                                   {/* Table Header */}
                                   <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 text-[11px] font-medium uppercase tracking-wider border-b"
-                                    style={{ color: 'var(--muted)', borderColor: 'var(--border)', backgroundColor: 'var(--secondary)' }}
+                                    style={{ color: '#757575', borderColor: 'var(--border)' }}
                                   >
                                     <div className="col-span-4">Tarea</div>
                                     <div className="col-span-2">Descripción</div>
@@ -290,13 +358,13 @@ export default function DashboardPage() {
                                               e.stopPropagation();
                                               toggleStatus(task.id, isDone ? 'TODO' : 'DONE');
                                             }}
-                                            className={`w-4.5 h-4.5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                              isDone ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-indigo-400'
-                                            }`}
+                                            className={`w-4.5 h-4.5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isDone ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-indigo-400'
+                                              }`}
                                           >
                                             {isDone && <HiOutlineCheck size={10} className="text-white" />}
                                           </button>
-                                          <span className={`text-sm truncate ${isDone ? 'line-through text-gray-400' : 'text-[var(--foreground)]'}`}>
+                                          <span className={`text-sm truncate ${isDone ? 'line-through text-gray-400' : 'text-[var(--foreground)]'}`}
+                                            style={{ fontWeight: '600' }}>
                                             {task.title}
                                           </span>
                                         </div>
@@ -320,7 +388,7 @@ export default function DashboardPage() {
 
                                         {/* Type tag */}
                                         <div className="hidden md:block md:col-span-1">
-                                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md"
+                                          <span className="text-[12px] font-medium px-2 py-0.5 rounded-md"
                                             style={{ color: category.color, backgroundColor: category.bg }}
                                           >
                                             {category.label}
@@ -329,7 +397,7 @@ export default function DashboardPage() {
 
                                         {/* Priority tag */}
                                         <div className="hidden md:block md:col-span-1">
-                                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md"
+                                          <span className="text-[12px] font-medium px-2 py-0.5 rounded-md"
                                             style={{ color: priority.color, backgroundColor: priority.bg }}
                                           >
                                             {priority.label}
@@ -344,29 +412,42 @@ export default function DashboardPage() {
                                         </div>
 
                                         {/* Actions */}
-                                        <div className="hidden md:flex md:col-span-1 justify-end">
+                                        <div className="hidden md:flex md:col-span-1 justify-end relative">
                                           <button
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="p-1 rounded hover:bg-gray-100 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === task.id ? null : task.id); }}
+                                            className="p-1 rounded hover:bg-gray-100 text-gray-400 transition-colors"
                                           >
                                             <HiOutlineDotsHorizontal size={14} />
                                           </button>
+                                          {openMenuId === task.id && (
+                                            <div ref={menuRef} className="absolute right-0 top-8 z-50 w-36 rounded-lg border shadow-lg py-1" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                                              <button onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); setOpenMenuId(null); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors">
+                                                <HiOutlineEye size={13} /> Ver
+                                              </button>
+                                              <button onClick={(e) => { e.stopPropagation(); handleEditTask(task.id); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors">
+                                                <HiOutlinePencil size={13} /> Editar
+                                              </button>
+                                              <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 transition-colors">
+                                                <HiOutlineTrash size={13} /> Eliminar
+                                              </button>
+                                            </div>
+                                          )}
                                         </div>
 
                                         {/* Mobile-only meta row */}
                                         <div className="md:hidden flex items-center gap-2 flex-wrap mt-1 pl-7">
-                                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md"
+                                          <span className="text-[12px] font-medium px-2 py-0.5 rounded-md"
                                             style={{ color: category.color, backgroundColor: category.bg }}
                                           >
                                             {category.label}
                                           </span>
-                                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md"
+                                          <span className="text-[12px] font-medium px-2 py-0.5 rounded-md"
                                             style={{ color: priority.color, backgroundColor: priority.bg }}
                                           >
                                             {priority.label}
                                           </span>
                                           {task.start_date && (
-                                            <span className="text-[10px] text-gray-400">{task.start_date.slice(5)}</span>
+                                            <span className="text-[12px] text-gray-400">{task.start_date.slice(5)}</span>
                                           )}
                                         </div>
                                       </div>
@@ -382,139 +463,153 @@ export default function DashboardPage() {
                   </div>
                 );
               })}
-          </div>
+            </div>
           ) : (
-          /* Board / Grid View — Kanban columns by status, rows by project */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-start">
-            {Object.entries(statusConfig).map(([status, cfg]) => {
-              const projectGroups = groupedByStatus[status] || {};
-              const count = totalByStatus[status] || 0;
+            /* Board / Grid View — Kanban columns by status, rows by project */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-start">
+              {Object.entries(statusConfig).map(([status, cfg]) => {
+                const projectGroups = groupedByStatus[status] || {};
+                const count = totalByStatus[status] || 0;
 
-              return (
-                <div key={status} className="rounded-xl border min-w-0" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-                  {/* Status column header */}
-                  <div
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-t-xl text-sm font-semibold"
-                    style={{ backgroundColor: cfg.color + '12', color: cfg.color }}
-                  >
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.dot }} />
-                    {cfg.label}
-                    <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: cfg.color + '20' }}>
-                      {count}
-                    </span>
-                  </div>
+                return (
+                  <div key={status} className="rounded-xl min-w-0">
+                    {/* Status column header */}
+                    <div
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-t-xl text-sm font-semibold"
+                      style={{ color: cfg.color }}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.dot }} />
+                      {cfg.label}
+                      <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: cfg.color + '20' }}>
+                        {count}
+                      </span>
+                    </div>
 
-                  {/* Project groups inside column */}
-                  <div className="p-2 space-y-3 max-h-[70vh] overflow-y-auto">
-                    {Object.keys(projectGroups).length === 0 ? (
-                      <p className="text-xs text-center py-4" style={{ color: 'var(--muted)' }}>Sin tareas</p>
-                    ) : (
-                      Object.entries(projectGroups).map(([projectKey, tasks]) => {
-                        const projectId = projectKey === 'personal' ? 'personal' : tasks[0]?.project_id?.toString() || projectKey;
-                        const collapseKey = `${status}::${projectId}`;
-                        const isProjectCollapsed = collapsedProjects[collapseKey];
-                        const projectColor = projectKey === 'personal' ? '#8b5cf6' : getProjectColor(tasks[0]?.project?.color_hex || '');
-                        const projectName = projectKey === 'personal' ? 'Personal' : (tasks[0]?.project?.name || projectKey);
+                    {/* Project groups inside column */}
+                    <div className="p-2 space-y-3 max-h-[70vh] overflow-y-auto">
+                      {Object.keys(projectGroups).length === 0 ? (
+                        <p className="text-xs text-center py-4" style={{ color: 'var(--muted)' }}>Sin tareas</p>
+                      ) : (
+                        Object.entries(projectGroups).map(([projectKey, tasks]) => {
+                          const projectId = projectKey === 'personal' ? 'personal' : tasks[0]?.project_id?.toString() || projectKey;
+                          const collapseKey = `${status}::${projectId}`;
+                          const isProjectCollapsed = collapsedProjects[collapseKey];
+                          const projectColor = projectKey === 'personal' ? '#8b5cf6' : getProjectColor(tasks[0]?.project?.color_hex || '');
+                          const projectName = projectKey === 'personal' ? 'Personal' : (tasks[0]?.project?.name || projectKey);
 
-                        return (
-                          <div key={projectKey}>
-                            {/* Project separator header */}
-                            <div className="flex items-center justify-between mb-1.5">
-                              <button
-                                onClick={() => toggleProjectCollapse(collapseKey)}
-                                className="flex items-center gap-1.5 text-xs font-medium min-w-0"
-                              >
-                                {isProjectCollapsed ? <HiOutlineChevronRight size={10} /> : <HiOutlineChevronDown size={10} />}
-                                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: projectColor }} />
-                                <span className="truncate">{projectName}</span>
-                                <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ color: 'var(--muted)', backgroundColor: 'var(--bg)' }}>
-                                  {tasks.length}
-                                </span>
-                              </button>
-                              <button className="p-0.5 rounded hover:bg-white/10 transition-colors" style={{ color: 'var(--muted)' }}>
-                                <HiOutlinePlus size={12} />
-                              </button>
-                            </div>
-
-                            {/* Task cards */}
-                            {!isProjectCollapsed && (
-                              <div className="space-y-2">
-                                {tasks.map((task: Task) => {
-                                  const category = categoryConfig[task.category] || categoryConfig.PERSONAL;
-                                  const priority = priorityConfig[task.priority] || priorityConfig.MEDIUM;
-
-                                  return (
-                                    <div
-                                      key={task.id}
-                                      onClick={() => handleTaskClick(task.id)}
-                                      className="rounded-lg border p-2.5 cursor-pointer hover:shadow-md transition-all group"
-                                      style={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)' }}
-                                    >
-                                      {/* Title */}
-                                      <div className="flex items-start justify-between gap-1.5 mb-1">
-                                        <h4 className="text-xs font-medium leading-tight line-clamp-2">{task.title}</h4>
-                                        <button
-                                          className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                                          style={{ color: 'var(--muted)' }}
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <HiOutlineDotsVertical size={12} />
-                                        </button>
-                                      </div>
-
-                                      {/* Description */}
-                                      {task.description && (
-                                        <p className="text-[10px] mb-2 line-clamp-2" style={{ color: 'var(--muted)' }}>
-                                          {task.description}
-                                        </p>
-                                      )}
-
-                                      {/* Tags */}
-                                      <div className="flex flex-wrap gap-1 mb-2">
-                                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded"
-                                          style={{ color: category.color, backgroundColor: category.bg }}
-                                        >
-                                          {category.label}
-                                        </span>
-                                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded"
-                                          style={{ color: priority.color, backgroundColor: priority.bg }}
-                                        >
-                                          {priority.label}
-                                        </span>
-                                      </div>
-
-                                      {/* Footer */}
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5">
-                                          {task.start_date && task.end_date && (
-                                            <span className="text-[9px]" style={{ color: 'var(--muted)' }}>
-                                              {task.start_date.slice(5)} → {task.end_date.slice(5)}
-                                            </span>
-                                          )}
-                                          {task.start_date && !task.end_date && (
-                                            <span className="text-[9px]" style={{ color: 'var(--muted)' }}>
-                                              {task.start_date.slice(5)}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ backgroundColor: cfg.dot }}>
-                                          {task.title.slice(0, 2).toUpperCase()}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
+                          return (
+                            <div key={projectKey} className="rounded-lg p-2" style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
+                              {/* Project separator header */}
+                              <div className="flex items-center justify-between mb-1.5">
+                                <button
+                                  onClick={() => toggleProjectCollapse(collapseKey)}
+                                  className="flex items-center gap-1.5 text-xs font-medium min-w-0"
+                                >
+                                  {isProjectCollapsed ? <HiOutlineChevronRight size={10} /> : <HiOutlineChevronDown size={10} />}
+                                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: projectColor }} />
+                                  <span className="truncate">{projectName}</span>
+                                  <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ color: 'var(--muted)', backgroundColor: 'var(--bg)' }}>
+                                    {tasks.length}
+                                  </span>
+                                </button>
+                                <button className="p-0.5 rounded hover:bg-white/10 transition-colors" style={{ color: 'var(--muted)' }}>
+                                  <HiOutlinePlus size={12} />
+                                </button>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
+
+                              {/* Task cards */}
+                              {!isProjectCollapsed && (
+                                <div className="space-y-2">
+                                  {tasks.map((task: Task) => {
+                                    const category = categoryConfig[task.category] || categoryConfig.PERSONAL;
+                                    const priority = priorityConfig[task.priority] || priorityConfig.MEDIUM;
+
+                                    return (
+                                      <div
+                                        key={task.id}
+                                        onClick={() => handleTaskClick(task.id)}
+                                        className="rounded-lg border p-2.5 cursor-pointer shadow-sm hover:shadow-md transition-all group"
+                                        style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+                                      >
+                                        {/* Title */}
+                                        <div className="flex items-start justify-between gap-1.5 mb-1">
+                                          <h4 className="text-sm font-semibold leading-tight line-clamp-2">{task.title}</h4>
+                                          <div className="relative flex-shrink-0">
+                                            <button
+                                              className="p-0.5 rounded text-gray-400 hover:text-gray-600 transition-colors"
+                                              onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === `k-${task.id}` ? null : `k-${task.id}`); }}
+                                            >
+                                              <HiOutlineDotsVertical size={12} />
+                                            </button>
+                                            {openMenuId === `k-${task.id}` && (
+                                              <div ref={menuRef} className="absolute right-0 top-5 z-50 w-36 rounded-lg border shadow-lg py-1" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                                                <button onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); setOpenMenuId(null); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors">
+                                                  <HiOutlineEye size={13} /> Ver
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleEditTask(task.id); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors">
+                                                  <HiOutlinePencil size={13} /> Editar
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 transition-colors">
+                                                  <HiOutlineTrash size={13} /> Eliminar
+                                                </button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Description */}
+                                        {task.description && (
+                                          <p className="text-[11px] mb-2 line-clamp-2 font-light" style={{ color: 'var(--muted)' }}>
+                                            {task.description}
+                                          </p>
+                                        )}
+
+                                        {/* Tags */}
+                                        <div className="flex flex-wrap gap-1 mb-2">
+                                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded"
+                                            style={{ color: category.color, backgroundColor: category.bg }}
+                                          >
+                                            {category.label}
+                                          </span>
+                                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded"
+                                            style={{ color: priority.color, backgroundColor: priority.bg }}
+                                          >
+                                            {priority.label}
+                                          </span>
+                                        </div>
+
+                                        {/* Footer */}
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-1.5">
+                                            {task.start_date && task.end_date && (
+                                              <span className="text-[9px]" style={{ color: 'var(--muted)' }}>
+                                                {task.start_date.slice(5)} → {task.end_date.slice(5)}
+                                              </span>
+                                            )}
+                                            {task.start_date && !task.end_date && (
+                                              <span className="text-[9px]" style={{ color: 'var(--muted)' }}>
+                                                {task.start_date.slice(5)}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ backgroundColor: cfg.dot }}>
+                                            {task.title.slice(0, 2).toUpperCase()}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -522,35 +617,34 @@ export default function DashboardPage() {
         <div className="w-full xl:w-[300px] xl:flex-shrink-0 space-y-4">
           {/* Habits Today */}
           <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-7">
               <div className="flex items-center gap-2">
                 <HiOutlineStar size={14} className="text-amber-400" />
                 <h3 className="text-sm font-semibold">Hábitos de hoy</h3>
               </div>
-              <a href="/habits" className="text-xs text-[var(--primary)] hover:underline">Ver todos</a>
+              <a href="/habits" className="text-xs text-black font-semibold hover:underline">Ver todos</a>
             </div>
             {todaysHabits.length === 0 ? (
               <p className="text-xs text-gray-400">No hay hábitos configurados</p>
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-5">
                 {todaysHabits.map(habit => (
-                  <div key={habit.id} className="flex items-center justify-between">
+                  <div key={habit.id} className={`flex items-center justify-between ${habit.todayCompleted ? 'bg-[#f2fff2]' : ''} p-1.5 rounded-lg`}>
                     <div className="flex items-center gap-2.5 min-w-0">
                       <button
                         onClick={() => toggleLog(habit.id, habit.todayDate)}
-                        className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                          habit.todayCompleted
-                            ? 'bg-green-500 border-green-500'
-                            : 'border-gray-300 hover:border-indigo-400'
-                        }`}
+                        className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${habit.todayCompleted
+                          ? 'bg-black border-black'
+                          : 'border-gray-300 hover:border-black'
+                          }`}
                       >
                         {habit.todayCompleted && <HiOutlineCheck size={8} className="text-white" />}
                       </button>
-                      <span className={`text-sm truncate ${habit.todayCompleted ? 'text-green-600 line-through' : 'text-[var(--foreground)]'}`}>
+                      <span className={`text-sm truncate ${habit.todayCompleted ? 'text-gray-400 line-through' : 'text-[var(--foreground)]'}`}>
                         {habit.name}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                    <span className="text-xs text-black font-bold border-1 border-solid px-2 rounded-2xl border-gray-300 flex-shrink-0 ml-2">
                       {habit.week?.filter(d => d.is_completed).length || 0} días
                     </span>
                   </div>
@@ -566,11 +660,13 @@ export default function DashboardPage() {
               <h3 className="text-sm font-semibold">Histórico</h3>
             </div>
 
-            {/* Today */}
+            {/* Current date tasks */}
             {tasks.filter(t => t.status !== 'DONE').length > 0 && (
               <div className="mb-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Hoy</p>
-                <div className="space-y-2">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-black mb-2">
+                  {isToday ? 'Hoy' : format(currentDateObj, "d 'de' MMM", { locale: es })}
+                </p>
+                <div className="space-y-2 pl-2">
                   {tasks.filter(t => t.status !== 'DONE').slice(0, 4).map(task => (
                     <div
                       key={task.id}
@@ -579,7 +675,7 @@ export default function DashboardPage() {
                     >
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: getProjectColor(task.project?.name || '') }} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm truncate text-[var(--foreground)]">{task.title}</p>
+                        <p className="text-sm truncate text-[var(--foreground)] font-medium">{task.title}</p>
                         <p className="text-[10px] text-gray-400">{task.project?.name || task.category}</p>
                       </div>
                       <span className="text-[10px] text-gray-400 flex-shrink-0">
@@ -593,11 +689,13 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Tomorrow */}
+            {/* Next day */}
             {tomorrowTasks.length > 0 && (
               <div className="mb-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Mañana</p>
-                <div className="space-y-2">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                  {isToday ? 'Mañana' : format(addDays(currentDateObj, 1), "d 'de' MMM", { locale: es })}
+                </p>
+                <div className="space-y-2 pl-2">
                   {tomorrowTasks.slice(0, 3).map(task => (
                     <div
                       key={task.id}
@@ -606,7 +704,7 @@ export default function DashboardPage() {
                     >
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: getProjectColor(task.project?.name || '') }} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm truncate text-[var(--foreground)]">{task.title}</p>
+                        <p className="text-sm truncate text-[var(--foreground)] font-medium">{task.title}</p>
                         <p className="text-[10px] text-gray-400">{task.project?.name || task.category}</p>
                       </div>
                       <span className="text-[10px] text-gray-400 flex-shrink-0">
@@ -623,8 +721,8 @@ export default function DashboardPage() {
             {/* Upcoming */}
             {futureTasks.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Próximos días</p>
-                <div className="space-y-2">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Próximos días</p>
+                <div className="space-y-2 pl-2">
                   {futureTasks.slice(0, 4).map(task => (
                     <div
                       key={task.id}
@@ -633,7 +731,7 @@ export default function DashboardPage() {
                     >
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: getProjectColor(task.project?.name || '') }} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm truncate text-[var(--foreground)]">{task.title}</p>
+                        <p className="text-sm truncate text-[var(--foreground)] font-medium">{task.title}</p>
                         <p className="text-[10px] text-gray-400">{task.project?.name || task.category}</p>
                       </div>
                       <span className="text-[10px] text-gray-400 flex-shrink-0">

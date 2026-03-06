@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useProjectStore } from '@/stores/projectStore';
+import { useTaskStore } from '@/stores/taskStore';
 import { Task } from '@/types';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import CreateTaskModal from '@/components/tasks/CreateTaskModal';
@@ -15,6 +16,9 @@ import {
   HiOutlineCheck,
   HiOutlineDotsVertical,
   HiOutlineFolder,
+  HiOutlineEye,
+  HiOutlinePencil,
+  HiOutlineTrash,
 } from 'react-icons/hi';
 
 const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
@@ -41,11 +45,36 @@ export default function ProjectDetailPage() {
   const projectId = params.id as string;
 
   const { currentProject, projectBoard, projectGantt, fetchProject, fetchProjectBoard, fetchProjectGantt } = useProjectStore();
+  const { deleteTask } = useTaskStore();
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [collapsedStatuses, setCollapsedStatuses] = useState<Record<string, boolean>>({});
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleDeleteTask = async (id: string) => {
+    if (!confirm('¿Eliminar esta tarea?')) return;
+    await deleteTask(id);
+    setOpenMenuId(null);
+    fetchProjectBoard(projectId);
+    fetchProject(projectId);
+  };
+
+  const handleEditTask = (id: string) => {
+    setSelectedTaskId(id);
+    setDetailOpen(true);
+    setOpenMenuId(null);
+  };
 
   const toggleStatusCollapse = (status: string) => {
     setCollapsedStatuses(prev => ({ ...prev, [status]: !prev[status] }));
@@ -134,11 +163,11 @@ export default function ProjectDetailPage() {
             const tasks = projectBoard[status as keyof typeof projectBoard] || [];
 
             return (
-              <div key={status} className="rounded-xl border min-w-0" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+              <div key={status} className="rounded-xl min-w-0">
                 {/* Column header */}
                 <div
                   className="flex items-center gap-2 px-3 py-2.5 rounded-t-xl text-sm font-semibold"
-                  style={{ backgroundColor: cfg.color + '12', color: cfg.color }}
+                  style={{ color: cfg.color }}
                 >
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.dot }} />
                   {cfg.label}
@@ -162,19 +191,33 @@ export default function ProjectDetailPage() {
                         <div
                           key={task.id}
                           onClick={() => { setSelectedTaskId(task.id); setDetailOpen(true); }}
-                          className="rounded-lg border p-2.5 cursor-pointer hover:shadow-md transition-all group"
-                          style={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)' }}
+                          className="rounded-lg border p-2.5 cursor-pointer shadow-sm hover:shadow-md transition-all group"
+                          style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
                         >
                           {/* Title */}
                           <div className="flex items-start justify-between gap-1.5 mb-1">
                             <h4 className="text-xs font-medium leading-tight line-clamp-2">{task.title}</h4>
-                            <button
-                              className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                              style={{ color: 'var(--muted)' }}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <HiOutlineDotsVertical size={12} />
-                            </button>
+                            <div className="relative flex-shrink-0">
+                              <button
+                                className="p-0.5 rounded text-gray-400 hover:text-gray-600 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === `k-${task.id}` ? null : `k-${task.id}`); }}
+                              >
+                                <HiOutlineDotsVertical size={12} />
+                              </button>
+                              {openMenuId === `k-${task.id}` && (
+                                <div ref={menuRef} className="absolute right-0 top-5 z-50 w-36 rounded-lg border shadow-lg py-1" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                                  <button onClick={(e) => { e.stopPropagation(); setSelectedTaskId(task.id); setDetailOpen(true); setOpenMenuId(null); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors">
+                                    <HiOutlineEye size={13} /> Ver
+                                  </button>
+                                  <button onClick={(e) => { e.stopPropagation(); handleEditTask(task.id); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors">
+                                    <HiOutlinePencil size={13} /> Editar
+                                  </button>
+                                  <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 transition-colors">
+                                    <HiOutlineTrash size={13} /> Eliminar
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {/* Description */}

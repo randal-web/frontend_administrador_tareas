@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Task, TaskCategory, TaskPriority } from '@/types';
 import { useTaskStore } from '@/stores/taskStore';
 import { useProjectStore } from '@/stores/projectStore';
@@ -16,6 +16,7 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
   const { createTask } = useTaskStore();
   const { projects } = useProjectStore();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -29,9 +30,17 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
   });
   const [newSubtask, setNewSubtask] = useState('');
 
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(prev => ({ ...prev, start_date: defaultDate || new Date().toISOString().split('T')[0] }));
+      setError('');
+    }
+  }, [isOpen, defaultDate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     try {
       await createTask({
         ...formData,
@@ -51,7 +60,7 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
         subtasks: [],
       });
     } catch {
-      // ignore
+      setError('Error al crear la tarea. Inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -90,6 +99,11 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {error && (
+            <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              {error}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium mb-1">Nombre de la tarea *</label>
             <input

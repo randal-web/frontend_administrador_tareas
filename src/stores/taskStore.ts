@@ -87,30 +87,34 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   createTask: async (data) => {
     await api.post('/tasks', data);
-    const { currentDate, fetchTasksByDate, fetchDaySummary } = get();
+    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
     await fetchTasksByDate(currentDate);
     await fetchDaySummary(currentDate);
+    await fetchUpcoming(currentDate);
   },
 
   updateTask: async (id, data) => {
     await api.put(`/tasks/${id}`, data);
-    const { currentDate, fetchTasksByDate, fetchDaySummary } = get();
+    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
     await fetchTasksByDate(currentDate);
     await fetchDaySummary(currentDate);
+    await fetchUpcoming(currentDate);
   },
 
   deleteTask: async (id) => {
     await api.delete(`/tasks/${id}`);
-    const { currentDate, fetchTasksByDate, fetchDaySummary } = get();
+    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
     await fetchTasksByDate(currentDate);
     await fetchDaySummary(currentDate);
+    await fetchUpcoming(currentDate);
   },
 
   toggleStatus: async (id, status) => {
     await api.patch(`/tasks/${id}/status`, { status });
-    const { currentDate, fetchTasksByDate, fetchDaySummary } = get();
+    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
     await fetchTasksByDate(currentDate);
     await fetchDaySummary(currentDate);
+    await fetchUpcoming(currentDate);
   },
 
   addSubtask: async (taskId, title) => {

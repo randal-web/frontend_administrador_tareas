@@ -111,7 +111,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   toggleStatus: async (id, status) => {
     await api.patch(`/tasks/${id}/status`, { status });
-    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
+    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming, fetchTask } = get();
+    await fetchTask(id);
     await fetchTasksByDate(currentDate);
     await fetchDaySummary(currentDate);
     await fetchUpcoming(currentDate);

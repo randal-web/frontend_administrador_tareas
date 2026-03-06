@@ -26,13 +26,14 @@ export default function HabitsPage() {
 
   const today = new Date();
   const currentWeekStart = startOfWeek(addWeeks(today, weekOffset), { weekStartsOn: 1 });
+  const weekStartStr = format(currentWeekStart, 'yyyy-MM-dd');
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
   const isCurrentWeek = weekOffset === 0;
 
   useEffect(() => {
     fetchHabits();
-    fetchWeeklyHabits();
-  }, [fetchHabits, fetchWeeklyHabits]);
+    fetchWeeklyHabits(weekStartStr);
+  }, [fetchHabits, fetchWeeklyHabits, weekStartStr]);
 
   const openCreate = () => {
     setForm({ name: '', description: '', frequency: [...dayIndices], color: '#6366f1' });
@@ -60,18 +61,18 @@ export default function HabitsPage() {
       await createHabit({ name: form.name, description: form.description, frequency: form.frequency });
     }
     setCreateOpen(false);
-    fetchWeeklyHabits();
+    fetchWeeklyHabits(weekStartStr);
   };
 
   const handleDelete = async (habitId: string) => {
     if (!confirm('¿Eliminar este hábito?')) return;
     await deleteHabit(habitId);
-    fetchWeeklyHabits();
+    fetchWeeklyHabits(weekStartStr);
   };
 
   const handleToggle = async (habitId: string, date: string) => {
     await toggleLog(habitId, date);
-    fetchWeeklyHabits();
+    fetchWeeklyHabits(weekStartStr);
   };
 
   const toggleDay = (dayIdx: number) => {

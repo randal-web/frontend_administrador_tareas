@@ -21,6 +21,8 @@ import {
   HiOutlineTrash,
 } from 'react-icons/hi';
 
+const fmtDate = (d: string) => d.split('-').reverse().join('/');
+
 const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
   TODO: { label: 'Por hacer', color: '#6366f1', dot: '#6366f1' },
   IN_PROGRESS: { label: 'En curso', color: '#3b82f6', dot: '#3b82f6' },
@@ -45,14 +47,39 @@ export default function ProjectDetailPage() {
   const projectId = params.id as string;
 
   const { currentProject, projectBoard, projectGantt, fetchProject, fetchProjectBoard, fetchProjectGantt } = useProjectStore();
-  const { deleteTask } = useTaskStore();
+  const { deleteTask, toggleStatus } = useTaskStore();
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [collapsedStatuses, setCollapsedStatuses] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('taskId', taskId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, status: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverStatus(status);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverStatus(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    setDragOverStatus(null);
+    const taskId = e.dataTransfer.getData('taskId');
+    if (!taskId) return;
+    await toggleStatus(taskId, newStatus);
+    fetchProjectBoard(projectId);
+  };
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -147,8 +174,8 @@ export default function ProjectDetailPage() {
           </div>
           <button
             onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={{ backgroundColor: 'var(--foreground)', color: 'var(--bg)' }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white"
+            style={{ backgroundColor: 'var(--foreground)' }}
           >
             <HiOutlinePlus size={16} />
             Nueva tarea
@@ -163,7 +190,13 @@ export default function ProjectDetailPage() {
             const tasks = projectBoard[status as keyof typeof projectBoard] || [];
 
             return (
-              <div key={status} className="rounded-xl min-w-0">
+              <div
+                key={status}
+                className={`rounded-xl min-w-0 transition-all ${dragOverStatus === status ? 'ring-2 ring-blue-400 bg-blue-50/30' : ''}`}
+                onDragOver={(e) => handleDragOver(e, status)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, status)}
+              >
                 {/* Column header */}
                 <div
                   className="flex items-center gap-2 px-3 py-2.5 rounded-t-xl text-sm font-semibold"
@@ -190,8 +223,10 @@ export default function ProjectDetailPage() {
                       return (
                         <div
                           key={task.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, task.id)}
                           onClick={() => { setSelectedTaskId(task.id); setDetailOpen(true); }}
-                          className="rounded-lg border p-2.5 cursor-pointer shadow-sm hover:shadow-md transition-all group"
+                          className="rounded-lg border p-2.5 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all group"
                           style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
                         >
                           {/* Title */}
@@ -246,12 +281,12 @@ export default function ProjectDetailPage() {
                             <div className="flex items-center gap-1.5">
                               {task.start_date && task.end_date && (
                                 <span className="text-[9px]" style={{ color: 'var(--muted)' }}>
-                                  {task.start_date.slice(5)} → {task.end_date.slice(5)}
+                                  {fmtDate(task.start_date)} → {fmtDate(task.end_date)}
                                 </span>
                               )}
                               {task.start_date && !task.end_date && (
                                 <span className="text-[9px]" style={{ color: 'var(--muted)' }}>
-                                  {task.start_date.slice(5)}
+                                  {fmtDate(task.start_date)}
                                 </span>
                               )}
                             </div>
@@ -370,7 +405,7 @@ export default function ProjectDetailPage() {
                           </div>
                           <div className="col-span-1 hidden md:block">
                             {task.start_date && (
-                              <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{task.start_date.slice(5)}</span>
+                              <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{fmtDate(task.start_date)}</span>
                             )}
                           </div>
                           <div className="col-span-1 flex justify-end">
@@ -415,7 +450,7 @@ export default function ProjectDetailPage() {
                       }}
                     >
                       <span className="text-[10px] whitespace-nowrap" style={{ color: statusColor }}>
-                        {task.start_date.slice(5)} → {task.end_date.slice(5)}
+                        {fmtDate(task.start_date)} → {fmtDate(task.end_date)}
                       </span>
                     </div>
                   </div>

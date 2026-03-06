@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Task } from '@/types';
+import { Task, TaskPriority, TaskCategory } from '@/types';
 import { useTaskStore } from '@/stores/taskStore';
-import { HiOutlineX, HiOutlineCheck, HiOutlineTrash, HiOutlinePlus } from 'react-icons/hi';
+import { HiOutlineX, HiOutlineCheck, HiOutlineTrash, HiOutlinePlus, HiOutlinePencil } from 'react-icons/hi';
 
 interface TaskDetailModalProps {
   taskId: string | null;
@@ -18,18 +18,59 @@ const statusOptions = [
   { value: 'DONE', label: 'Hecha' },
 ];
 
+const priorityOptions = [
+  { value: 'LOW', label: 'Baja' },
+  { value: 'MEDIUM', label: 'Media' },
+  { value: 'HIGH', label: 'Alta' },
+];
+
+const categoryOptions = [
+  { value: 'PERSONAL', label: 'Personal' },
+  { value: 'WORK', label: 'Trabajo' },
+  { value: 'PROJECT', label: 'Proyecto' },
+];
+
 export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailModalProps) {
-  const { currentTask, fetchTask, toggleSubtask, addSubtask, deleteSubtask, addComment, deleteComment, toggleStatus, deleteTask } = useTaskStore();
+  const { currentTask, fetchTask, updateTask, toggleSubtask, addSubtask, deleteSubtask, addComment, deleteComment, toggleStatus, deleteTask } = useTaskStore();
   const [newSubtask, setNewSubtask] = useState('');
   const [newComment, setNewComment] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState({ title: '', description: '', priority: 'MEDIUM' as TaskPriority, category: 'PERSONAL' as TaskCategory, start_date: '', end_date: '' });
 
   useEffect(() => {
     if (taskId && isOpen) {
       fetchTask(taskId);
+      setEditing(false);
     }
   }, [taskId, isOpen, fetchTask]);
 
   if (!isOpen || !currentTask) return null;
+
+  const startEditing = () => {
+    setEditData({
+      title: currentTask.title,
+      description: currentTask.description || '',
+      priority: currentTask.priority,
+      category: currentTask.category,
+      start_date: currentTask.start_date || '',
+      end_date: currentTask.end_date || '',
+    });
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!taskId || !editData.title.trim()) return;
+    await updateTask(taskId, {
+      title: editData.title.trim(),
+      description: editData.description.trim() || null,
+      priority: editData.priority,
+      category: editData.category,
+      start_date: editData.start_date || null,
+      end_date: editData.end_date || null,
+    });
+    await fetchTask(taskId);
+    setEditing(false);
+  };
 
   const handleAddSubtask = async () => {
     if (newSubtask.trim() && taskId) {
@@ -52,7 +93,13 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
     }
   };
 
+  const handleStatusChange = async (status: string) => {
+    if (!taskId) return;
+    await toggleStatus(taskId, status);
+  };
+
   const priorityColors: Record<string, string> = { HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#22c55e' };
+  const inputClass = 'w-full px-3 py-1.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -62,54 +109,100 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)' }}>
-          <h2 className="text-lg font-semibold">{currentTask.title}</h2>
+          {editing ? (
+            <input
+              value={editData.title}
+              onChange={e => setEditData(d => ({ ...d, title: e.target.value }))}
+              className="text-lg font-semibold bg-transparent border-b-2 border-blue-500 focus:outline-none flex-1 mr-3"
+              autoFocus
+            />
+          ) : (
+            <h2 className="text-lg font-semibold flex-1">{currentTask.title}</h2>
+          )}
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleDelete}
-              className="p-2 rounded-lg hover:bg-red-50 text-red-500"
-              title="Eliminar tarea"
-            >
-              <HiOutlineTrash size={18} />
-            </button>
-            <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
-              <HiOutlineX size={20} />
-            </button>
+            {editing ? (
+              <>
+                <button onClick={handleSave} className="px-3 py-1.5 rounded-lg text-white text-xs font-medium" style={{ backgroundColor: 'var(--primary)' }}>Guardar</button>
+                <button onClick={() => setEditing(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium border" style={{ borderColor: 'var(--border)' }}>Cancelar</button>
+              </>
+            ) : (
+              <button onClick={startEditing} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500" title="Editar tarea"><HiOutlinePencil size={18} /></button>
+            )}
+            <button onClick={handleDelete} className="p-2 rounded-lg hover:bg-red-50 text-red-500" title="Eliminar tarea"><HiOutlineTrash size={18} /></button>
+            <button onClick={onClose} className="p-1 rounded hover:bg-gray-100"><HiOutlineX size={20} /></button>
           </div>
         </div>
 
         <div className="p-4 space-y-5">
           {/* Description */}
-          {currentTask.description && (
+          {editing ? (
+            <div>
+              <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--muted)' }}>Descripción</h3>
+              <textarea
+                value={editData.description}
+                onChange={e => setEditData(d => ({ ...d, description: e.target.value }))}
+                className={inputClass + ' resize-none'}
+                style={{ borderColor: 'var(--border)' }}
+                rows={3}
+                placeholder="Descripción de la tarea..."
+              />
+            </div>
+          ) : currentTask.description ? (
             <div>
               <h3 className="text-sm font-medium mb-1" style={{ color: 'var(--muted)' }}>Descripción</h3>
               <p className="text-sm">{currentTask.description}</p>
             </div>
-          )}
+          ) : null}
 
           {/* Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
-              <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Prioridad</span>
-              <span className="text-sm font-medium flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: priorityColors[currentTask.priority] }} />
-                {currentTask.priority === 'HIGH' ? 'Alta' : currentTask.priority === 'MEDIUM' ? 'Media' : 'Baja'}
-              </span>
+          {editing ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Prioridad</label>
+                <select value={editData.priority} onChange={e => setEditData(d => ({ ...d, priority: e.target.value as TaskPriority }))} className={inputClass} style={{ borderColor: 'var(--border)' }}>
+                  {priorityOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Categoría</label>
+                <select value={editData.category} onChange={e => setEditData(d => ({ ...d, category: e.target.value as TaskCategory }))} className={inputClass} style={{ borderColor: 'var(--border)' }}>
+                  {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Inicio</label>
+                <input type="date" value={editData.start_date} onChange={e => setEditData(d => ({ ...d, start_date: e.target.value }))} className={inputClass} style={{ borderColor: 'var(--border)' }} />
+              </div>
+              <div>
+                <label className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Fin</label>
+                <input type="date" value={editData.end_date} onChange={e => setEditData(d => ({ ...d, end_date: e.target.value }))} className={inputClass} style={{ borderColor: 'var(--border)' }} />
+              </div>
             </div>
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
-              <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Categoría</span>
-              <span className="text-sm font-medium">
-                {currentTask.category === 'PERSONAL' ? 'Personal' : currentTask.category === 'WORK' ? 'Trabajo' : 'Proyecto'}
-              </span>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
+                <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Prioridad</span>
+                <span className="text-sm font-medium flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: priorityColors[currentTask.priority] }} />
+                  {currentTask.priority === 'HIGH' ? 'Alta' : currentTask.priority === 'MEDIUM' ? 'Media' : 'Baja'}
+                </span>
+              </div>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
+                <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Categoría</span>
+                <span className="text-sm font-medium">
+                  {currentTask.category === 'PERSONAL' ? 'Personal' : currentTask.category === 'WORK' ? 'Trabajo' : 'Proyecto'}
+                </span>
+              </div>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
+                <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Inicio</span>
+                <span className="text-sm font-medium">{currentTask.start_date || '—'}</span>
+              </div>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
+                <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Fin</span>
+                <span className="text-sm font-medium">{currentTask.end_date || '—'}</span>
+              </div>
             </div>
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
-              <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Inicio</span>
-              <span className="text-sm font-medium">{currentTask.start_date || '—'}</span>
-            </div>
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
-              <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Fin</span>
-              <span className="text-sm font-medium">{currentTask.end_date || '—'}</span>
-            </div>
-          </div>
+          )}
 
           {/* Status */}
           <div>
@@ -118,7 +211,7 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
               {statusOptions.map(opt => (
                 <button
                   key={opt.value}
-                  onClick={() => taskId && toggleStatus(taskId, opt.value)}
+                  onClick={() => handleStatusChange(opt.value)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     currentTask.status === opt.value
                       ? 'text-white'

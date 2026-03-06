@@ -106,7 +106,7 @@ export default function ProfilePage() {
 
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted)' }}>Miembro desde</label>
-            <p className="text-sm py-2">{new Date(user.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p className="text-sm py-2">{new Date(user.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
           </div>
         </div>
 

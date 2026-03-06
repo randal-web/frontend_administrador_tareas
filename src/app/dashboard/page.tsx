@@ -39,6 +39,8 @@ const categoryConfig: Record<string, { label: string; color: string; bg: string 
   PROJECT: { label: 'Proyecto', color: '#0891b2', bg: '#ecfeff' },
 };
 
+const fmtDate = (d: string) => d.split('-').reverse().join('/');
+
 const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
   TODO: { label: 'Por hacer', color: '#106AFF', dot: '#106AFF' },
   IN_PROGRESS: { label: 'En curso', color: '#3b82f6', dot: '#3b82f6' },
@@ -68,13 +70,60 @@ export default function DashboardPage() {
   const [collapsedStatuses, setCollapsedStatuses] = useState<Record<string, boolean>>({});
   const [collapsedProjects, setCollapsedProjects] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterPriority, setFilterPriority] = useState<string[]>([]);
+  const [filterCategory, setFilterCategory] = useState<string[]>([]);
+  const [filterProject, setFilterProject] = useState<string[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
+  const activeFilterCount = filterPriority.length + filterCategory.length + filterProject.length;
+
+  const toggleFilter = (arr: string[], setArr: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
+    setArr(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
+  };
+
+  const clearFilters = () => {
+    setFilterPriority([]);
+    setFilterCategory([]);
+    setFilterProject([]);
+  };
+
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('taskId', taskId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, status: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverStatus(status);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverStatus(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    setDragOverStatus(null);
+    const taskId = e.dataTransfer.getData('taskId');
+    if (!taskId) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (task && task.status !== newStatus) {
+      await toggleStatus(taskId, newStatus);
+    }
+  };
+
+  // Close menu / filter on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpenMenuId(null);
+      }
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -95,13 +144,26 @@ export default function DashboardPage() {
     return format(d, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
   }, [currentDate]);
 
+  // Filtered tasks
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(t => {
+      if (filterPriority.length > 0 && !filterPriority.includes(t.priority)) return false;
+      if (filterCategory.length > 0 && !filterCategory.includes(t.category)) return false;
+      if (filterProject.length > 0) {
+        const pName = t.project?.name || 'Sin proyecto';
+        if (!filterProject.includes(pName)) return false;
+      }
+      return true;
+    });
+  }, [tasks, filterPriority, filterCategory, filterProject]);
+
   // Group tasks: status → project
   const groupedByStatus = useMemo(() => {
     const groups: Record<string, Record<string, Task[]>> = {};
     const statusOrder = ['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'];
 
     statusOrder.forEach(status => {
-      const statusTasks = tasks.filter(t => t.status === status);
+      const statusTasks = filteredTasks.filter(t => t.status === status);
       if (statusTasks.length === 0) return;
 
       const byProject: Record<string, Task[]> = {};
@@ -114,14 +176,21 @@ export default function DashboardPage() {
     });
 
     return groups;
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const totalByStatus = useMemo(() => {
     const counts: Record<string, number> = {};
-    tasks.forEach(t => {
+    filteredTasks.forEach(t => {
       counts[t.status] = (counts[t.status] || 0) + 1;
     });
     return counts;
+  }, [filteredTasks]);
+
+  // Unique project names for filter
+  const projectNames = useMemo(() => {
+    const names = new Set<string>();
+    tasks.forEach(t => names.add(t.project?.name || 'Sin proyecto'));
+    return Array.from(names).sort();
   }, [tasks]);
 
   const toggleStatusCollapse = (status: string) => {
@@ -243,12 +312,101 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors hover:bg-gray-50"
-                style={{ borderColor: 'var(--border)' }}
-              >
-                <HiOutlineFilter size={14} />
-                Filtros
-              </button>
+              <div className="relative" ref={filterRef}>
+                <button
+                  onClick={() => setFilterOpen(prev => !prev)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors hover:bg-gray-50 ${activeFilterCount > 0 ? 'border-blue-400 bg-blue-50 text-blue-600' : ''}`}
+                  style={activeFilterCount === 0 ? { borderColor: 'var(--border)' } : {}}
+                >
+                  <HiOutlineFilter size={14} />
+                  Filtros
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 text-[10px] font-bold bg-blue-500 text-white w-4 h-4 rounded-full flex items-center justify-center">{activeFilterCount}</span>
+                  )}
+                </button>
+
+                {filterOpen && (
+                  <div className="absolute right-0 top-10 z-50 w-72 rounded-xl border shadow-xl p-4 space-y-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold">Filtros</h4>
+                      {activeFilterCount > 0 && (
+                        <button onClick={clearFilters} className="text-xs text-blue-500 hover:underline">Limpiar todo</button>
+                      )}
+                    </div>
+
+                    {/* Priority */}
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--muted)' }}>Prioridad</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(priorityConfig).map(([key, cfg]) => (
+                          <button
+                            key={key}
+                            onClick={() => toggleFilter(filterPriority, setFilterPriority, key)}
+                            className={`text-xs px-2.5 py-1 rounded-lg border transition-colors font-medium ${
+                              filterPriority.includes(key) ? 'text-white' : ''
+                            }`}
+                            style={{
+                              backgroundColor: filterPriority.includes(key) ? cfg.color : cfg.bg,
+                              color: filterPriority.includes(key) ? 'white' : cfg.color,
+                              borderColor: filterPriority.includes(key) ? cfg.color : 'transparent',
+                            }}
+                          >
+                            {cfg.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--muted)' }}>Categoría</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(categoryConfig).map(([key, cfg]) => (
+                          <button
+                            key={key}
+                            onClick={() => toggleFilter(filterCategory, setFilterCategory, key)}
+                            className={`text-xs px-2.5 py-1 rounded-lg border transition-colors font-medium`}
+                            style={{
+                              backgroundColor: filterCategory.includes(key) ? cfg.color : cfg.bg,
+                              color: filterCategory.includes(key) ? 'white' : cfg.color,
+                              borderColor: filterCategory.includes(key) ? cfg.color : 'transparent',
+                            }}
+                          >
+                            {cfg.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Project */}
+                    {projectNames.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--muted)' }}>Proyecto</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {projectNames.map(name => {
+                            const isActive = filterProject.includes(name);
+                            const color = getProjectColor(name);
+                            return (
+                              <button
+                                key={name}
+                                onClick={() => toggleFilter(filterProject, setFilterProject, name)}
+                                className="text-xs px-2.5 py-1 rounded-lg border transition-colors font-medium"
+                                style={{
+                                  backgroundColor: isActive ? color : color + '15',
+                                  color: isActive ? 'white' : color,
+                                  borderColor: isActive ? color : 'transparent',
+                                }}
+                              >
+                                {name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => setCreateModalOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium text-white transition-colors hover:opacity-90"
@@ -321,7 +479,7 @@ export default function DashboardPage() {
 
                               {/* Task Table */}
                               {!isProjectCollapsed && (
-                                <div className="ml-4 mr-2 mb-2 rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)', backgroundColor: 'white' }}>
+                                <div className="ml-4 mr-2 mb-2 rounded-lg border" style={{ borderColor: 'var(--border)', backgroundColor: 'white' }}>
                                   {/* Table Header */}
                                   <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 text-[11px] font-medium uppercase tracking-wider border-b"
                                     style={{ color: '#757575', borderColor: 'var(--border)' }}
@@ -381,7 +539,7 @@ export default function DashboardPage() {
                                           <span className="font-medium">{estimationHours}</span>
                                           {task.start_date && (
                                             <div className="text-[10px] text-gray-400">
-                                              {task.start_date.slice(5)}{task.end_date && ` → ${task.end_date.slice(5)}`}
+                                              {fmtDate(task.start_date)}{task.end_date && ` → ${fmtDate(task.end_date)}`}
                                             </div>
                                           )}
                                         </div>
@@ -447,7 +605,7 @@ export default function DashboardPage() {
                                             {priority.label}
                                           </span>
                                           {task.start_date && (
-                                            <span className="text-[12px] text-gray-400">{task.start_date.slice(5)}</span>
+                                            <span className="text-[12px] text-gray-400">{fmtDate(task.start_date)}</span>
                                           )}
                                         </div>
                                       </div>
@@ -472,7 +630,13 @@ export default function DashboardPage() {
                 const count = totalByStatus[status] || 0;
 
                 return (
-                  <div key={status} className="rounded-xl min-w-0">
+                  <div
+                    key={status}
+                    className={`rounded-xl min-w-0 transition-all ${dragOverStatus === status ? 'ring-2 ring-blue-400 bg-blue-50/30' : ''}`}
+                    onDragOver={(e) => handleDragOver(e, status)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, status)}
+                  >
                     {/* Status column header */}
                     <div
                       className="flex items-center gap-2 px-3 py-2.5 rounded-t-xl text-sm font-semibold"
@@ -527,8 +691,10 @@ export default function DashboardPage() {
                                     return (
                                       <div
                                         key={task.id}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, task.id)}
                                         onClick={() => handleTaskClick(task.id)}
-                                        className="rounded-lg border p-2.5 cursor-pointer shadow-sm hover:shadow-md transition-all group"
+                                        className="rounded-lg border p-2.5 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all group"
                                         style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
                                       >
                                         {/* Title */}
@@ -583,12 +749,12 @@ export default function DashboardPage() {
                                           <div className="flex items-center gap-1.5">
                                             {task.start_date && task.end_date && (
                                               <span className="text-[9px]" style={{ color: 'var(--muted)' }}>
-                                                {task.start_date.slice(5)} → {task.end_date.slice(5)}
+                                                {fmtDate(task.start_date)} → {fmtDate(task.end_date)}
                                               </span>
                                             )}
                                             {task.start_date && !task.end_date && (
                                               <span className="text-[9px]" style={{ color: 'var(--muted)' }}>
-                                                {task.start_date.slice(5)}
+                                                {fmtDate(task.start_date)}
                                               </span>
                                             )}
                                           </div>

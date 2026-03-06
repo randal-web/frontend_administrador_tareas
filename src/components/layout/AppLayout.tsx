@@ -68,7 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <div
         className={`transition-all duration-300 min-h-screen flex flex-col ${
-          sidebarOpen ? 'md:ml-[220px]' : 'md:ml-[220px]'
+          sidebarOpen ? 'md:ml-[220px]' : 'md:ml-[48px]'
         }`}
       >
         {/* Top Bar */}

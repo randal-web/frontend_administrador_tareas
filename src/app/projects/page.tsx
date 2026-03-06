@@ -1,16 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useProjectStore } from '@/stores/projectStore';
-import { HiOutlinePlus, HiOutlineFolder, HiOutlineTrash, HiOutlinePencil, HiOutlineX, HiOutlineCalendar, HiOutlineDotsHorizontal } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlineFolder, HiOutlineTrash, HiOutlinePencil, HiOutlineX, HiOutlineCalendar, HiOutlineDotsHorizontal, HiOutlineEye, HiOutlineArchive } from 'react-icons/hi';
 
 export default function ProjectsPage() {
   const { projects, isLoading, fetchProjects, createProject, updateProject, deleteProject } = useProjectStore();
+  const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', color_hex: '#6366f1' });
   const [activeTab, setActiveTab] = useState<'folders' | 'stats'>('folders');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   useEffect(() => {
     fetchProjects();
@@ -35,7 +47,13 @@ export default function ProjectsPage() {
   const handleDelete = async (id: string) => {
     if (confirm('¿Estás seguro de eliminar este proyecto? Se desvinculará de las tareas asociadas.')) {
       await deleteProject(id);
+      setOpenMenuId(null);
     }
+  };
+
+  const handleArchive = async (id: string) => {
+    await updateProject(id, { status: 'archived' });
+    setOpenMenuId(null);
   };
 
   const startEdit = (project: any) => {
@@ -183,32 +201,31 @@ export default function ProjectsPage() {
                   <div className="absolute top-0 left-0 right-0 h-[2px] rounded-tr-xl" style={{ backgroundColor: project.color_hex }} />
 
                   {/* Actions menu */}
-                  <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <div className="flex gap-0.5">
-                      <button
-                        onClick={(e) => { e.preventDefault(); startEdit(project); }}
-                        className="p-1 rounded hover:bg-black/5"
-                        style={{ color: 'var(--muted)' }}
-                      >
-                        <HiOutlinePencil size={13} />
-                      </button>
-                      <button
-                        onClick={(e) => { e.preventDefault(); handleDelete(project.id); }}
-                        className="p-1 rounded hover:bg-red-50 text-red-400"
-                      >
-                        <HiOutlineTrash size={13} />
-                      </button>
-                    </div>
+                  <div className="absolute top-2.5 right-2.5 z-10">
+                    <button
+                      onClick={(e) => { e.preventDefault(); setOpenMenuId(openMenuId === project.id ? null : project.id); }}
+                      className="p-1 rounded hover:bg-black/5 transition-colors"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      <HiOutlineDotsHorizontal size={16} />
+                    </button>
+                    {openMenuId === project.id && (
+                      <div ref={menuRef} className="absolute right-0 top-7 w-40 rounded-lg border shadow-lg py-1" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                        <button onClick={(e) => { e.preventDefault(); router.push(`/projects/${project.id}`); setOpenMenuId(null); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors">
+                          <HiOutlineEye size={13} /> Ver detalles
+                        </button>
+                        <button onClick={(e) => { e.preventDefault(); startEdit(project); setOpenMenuId(null); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors">
+                          <HiOutlinePencil size={13} /> Editar
+                        </button>
+                        <button onClick={(e) => { e.preventDefault(); handleArchive(project.id); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors" style={{ color: '#f59e0b' }}>
+                          <HiOutlineArchive size={13} /> Archivar
+                        </button>
+                        <button onClick={(e) => { e.preventDefault(); handleDelete(project.id); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 transition-colors">
+                          <HiOutlineTrash size={13} /> Eliminar
+                        </button>
+                      </div>
+                    )}
                   </div>
-
-                  {/* "..." button (always visible) */}
-                  <button
-                    onClick={(e) => e.preventDefault()}
-                    className="absolute top-2.5 right-2.5 p-1 rounded group-hover:opacity-0 transition-opacity"
-                    style={{ color: 'var(--muted)' }}
-                  >
-                    <HiOutlineDotsHorizontal size={16} />
-                  </button>
 
                   <div className="p-4 pt-3.5">
                     {/* Folder icon + Name */}
@@ -251,7 +268,12 @@ export default function ProjectsPage() {
                       </div>
                       <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--muted)' }}>
                         <HiOutlineCalendar size={11} />
-                        {new Date(project.created_at).toLocaleDateString('es', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                        {(() => {
+                          const raw = project.created_at || (project as unknown as Record<string, unknown>).createdAt;
+                          if (!raw) return 'Sin fecha';
+                          const d = new Date(raw as string);
+                          return isNaN(d.getTime()) ? 'Sin fecha' : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        })()}
                       </div>
                     </div>
                   </div>

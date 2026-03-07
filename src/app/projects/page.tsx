@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useProjectStore } from '@/stores/projectStore';
 import { useAuthStore } from '@/stores/authStore';
-import { HiOutlinePlus, HiOutlineFolder, HiOutlineTrash, HiOutlinePencil, HiOutlineX, HiOutlineCalendar, HiOutlineDotsHorizontal, HiOutlineEye, HiOutlineArchive } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlineFolder, HiOutlineTrash, HiOutlinePencil, HiOutlineX, HiOutlineCalendar, HiOutlineDotsHorizontal, HiOutlineEye, HiOutlineArchive, HiOutlineChevronDown, HiOutlineChevronRight } from 'react-icons/hi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function ProjectsPage() {
@@ -67,6 +67,11 @@ export default function ProjectsPage() {
     setOpenMenuId(null);
   };
 
+  const handleRestore = async (id: string) => {
+    await updateProject(id, { status: 'active' });
+    setOpenMenuId(null);
+  };
+
   const startEdit = (project: any) => {
     setEditingId(project.id);
     setFormData({ name: project.name, description: project.description || '', color_hex: project.color_hex });
@@ -76,6 +81,8 @@ export default function ProjectsPage() {
   const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f59e0b', '#22c55e', '#06b6d4', '#3b82f6'];
 
   const activeProjects = projects.filter(p => p.status === 'active');
+  const archivedProjects = projects.filter(p => p.status === 'archived');
+  const [showArchived, setShowArchived] = useState(false);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -183,8 +190,15 @@ export default function ProjectsPage() {
         </div>
       ) : activeTab === 'folders' ? (
         /* Project Cards Grid - Folder style */
+        <>
+        {activeProjects.length === 0 ? (
+          <div className="text-center py-12 rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <HiOutlineFolder size={40} className="mx-auto mb-3 text-gray-300" />
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>No hay proyectos activos</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {projects.map(project => {
+          {activeProjects.map(project => {
             const progress = project.total_tasks > 0 ? Math.round((project.done_tasks / project.total_tasks) * 100) : 0;
             const initials = project.name.split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase();
             const bgTint = project.color_hex + '08';
@@ -290,6 +304,76 @@ export default function ProjectsPage() {
             );
           })}
         </div>
+        )}
+
+        {/* Archived Projects Section */}
+        {archivedProjects.length > 0 && (
+          <div className="mt-6">
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className="flex items-center gap-2 text-sm font-medium mb-3 transition-colors hover:opacity-80"
+              style={{ color: 'var(--muted)' }}
+            >
+              {showArchived ? <HiOutlineChevronDown size={14} /> : <HiOutlineChevronRight size={14} />}
+              <HiOutlineArchive size={14} />
+              Archivados ({archivedProjects.length})
+            </button>
+            {showArchived && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {archivedProjects.map(project => {
+                  const progress = project.total_tasks > 0 ? Math.round((project.done_tasks / project.total_tasks) * 100) : 0;
+                  const bgTint = project.color_hex + '08';
+                  return (
+                    <div key={project.id} className="relative opacity-60">
+                      {/* Folder tab */}
+                      <div className="flex items-end">
+                        <div className="h-3 w-16 rounded-t-lg" style={{ backgroundColor: project.color_hex }} />
+                      </div>
+                      {/* Card body */}
+                      <div className="rounded-b-xl rounded-tr-xl border border-t-0 relative" style={{ backgroundColor: bgTint, borderColor: 'var(--border)' }}>
+                        <div className="absolute top-0 left-0 right-0 h-[2px] rounded-tr-xl" style={{ backgroundColor: project.color_hex }} />
+                        {/* Actions */}
+                        <div className="absolute top-2.5 right-2.5 z-10">
+                          <button
+                            onClick={() => setOpenMenuId(openMenuId === `arch-${project.id}` ? null : `arch-${project.id}`)}
+                            className="p-1 rounded hover:bg-black/5 transition-colors"
+                            style={{ color: 'var(--muted)' }}
+                          >
+                            <HiOutlineDotsHorizontal size={16} />
+                          </button>
+                          {openMenuId === `arch-${project.id}` && (
+                            <div ref={menuRef} className="absolute right-0 top-7 w-40 rounded-lg border shadow-lg py-1" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+                              <button onClick={() => handleRestore(project.id)} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors" style={{ color: '#22c55e' }}>
+                                <HiOutlineArchive size={13} /> Restaurar
+                              </button>
+                              <button onClick={() => handleDelete(project.id)} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 transition-colors">
+                                <HiOutlineTrash size={13} /> Eliminar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4 pt-3.5">
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <HiOutlineFolder size={18} style={{ color: project.color_hex }} />
+                            <h3 className="font-semibold text-sm truncate pr-6">{project.name}</h3>
+                          </div>
+                          <div className="flex items-center justify-between text-xs mb-1.5" style={{ color: 'var(--muted)' }}>
+                            <span>{project.done_tasks}/{project.total_tasks} tareas</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">Archivado</span>
+                          </div>
+                          <div className="h-1.5 rounded-full overflow-hidden mb-3.5" style={{ backgroundColor: 'var(--secondary)' }}>
+                            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, backgroundColor: project.color_hex }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </>
       ) : (
         /* Statistics Tab */
         <div className="space-y-6">

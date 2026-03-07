@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useProjectStore } from '@/stores/projectStore';
 import { useTaskStore } from '@/stores/taskStore';
+import { useAuthStore } from '@/stores/authStore';
 import { Task } from '@/types';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import CreateTaskModal from '@/components/tasks/CreateTaskModal';
@@ -49,6 +50,11 @@ export default function ProjectDetailPage() {
 
   const { currentProject, projectBoard, projectGantt, fetchProject, fetchProjectBoard, fetchProjectGantt } = useProjectStore();
   const { deleteTask, toggleStatus } = useTaskStore();
+  const { user } = useAuthStore();
+
+  const userInitials = user?.full_name
+    ? user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -298,7 +304,7 @@ export default function ProjectDetailPage() {
                               )}
                             </div>
                             <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ backgroundColor: cfg.dot }}>
-                              {task.title.slice(0, 2).toUpperCase()}
+                              {userInitials}
                             </div>
                           </div>
                         </div>
@@ -417,7 +423,7 @@ export default function ProjectDetailPage() {
                           </div>
                           <div className="col-span-1 flex justify-end">
                             <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ backgroundColor: cfg.dot }}>
-                              {task.title.slice(0, 2).toUpperCase()}
+                              {userInitials}
                             </div>
                           </div>
                         </div>

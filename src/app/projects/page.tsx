@@ -4,11 +4,16 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useProjectStore } from '@/stores/projectStore';
+import { useAuthStore } from '@/stores/authStore';
 import { HiOutlinePlus, HiOutlineFolder, HiOutlineTrash, HiOutlinePencil, HiOutlineX, HiOutlineCalendar, HiOutlineDotsHorizontal, HiOutlineEye, HiOutlineArchive } from 'react-icons/hi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function ProjectsPage() {
   const { projects, isLoading, fetchProjects, createProject, updateProject, deleteProject } = useProjectStore();
+  const { user } = useAuthStore();
+  const userInitials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -256,21 +261,18 @@ export default function ProjectsPage() {
                       />
                     </div>
 
-                    {/* Footer: avatars + date */}
+                    {/* Footer: avatar + date */}
                     <div className="flex items-center justify-between">
                       <div className="flex -space-x-1.5">
-                        {initials.split('').map((letter, i) => (
-                          <div
-                            key={i}
-                            className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9px] font-bold text-white"
-                            style={{
-                              backgroundColor: '#1a1a1a',
-                              borderColor: bgTint,
-                            }}
-                          >
-                            {letter}
-                          </div>
-                        ))}
+                        <div
+                          className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9px] font-bold text-white"
+                          style={{
+                            backgroundColor: '#1a1a1a',
+                            borderColor: bgTint,
+                          }}
+                        >
+                          {userInitials}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--muted)' }}>
                         <HiOutlineCalendar size={11} />
@@ -357,8 +359,6 @@ export default function ProjectsPage() {
                   <h3 className="text-sm font-bold mb-4">Equipo por proyecto</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {projects.map(project => {
-                      const initials = project.name.split(' ').map(w => w[0]).join('').slice(0, 4).toUpperCase();
-                      const memberCount = initials.length;
                       return (
                         <div
                           key={project.id}
@@ -369,19 +369,16 @@ export default function ProjectsPage() {
                             <HiOutlineFolder size={16} style={{ color: project.color_hex }} />
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">{project.name}</p>
-                              <p className="text-xs" style={{ color: 'var(--muted)' }}>{memberCount} {memberCount === 1 ? 'miembro' : 'miembros'}</p>
+                              <p className="text-xs" style={{ color: 'var(--muted)' }}>1 miembro</p>
                             </div>
                           </div>
                           <div className="flex -space-x-1.5 flex-shrink-0">
-                            {initials.split('').map((letter, i) => (
-                              <div
-                                key={i}
-                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-bold text-white"
-                                style={{ backgroundColor: '#1a1a1a', borderColor: project.color_hex + '0a' }}
-                              >
-                                {letter}
-                              </div>
-                            ))}
+                            <div
+                              className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-bold text-white"
+                              style={{ backgroundColor: '#1a1a1a', borderColor: project.color_hex + '0a' }}
+                            >
+                              {userInitials}
+                            </div>
                           </div>
                         </div>
                       );

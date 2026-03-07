@@ -23,13 +23,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (data: LoginData) => {
     const res = await api.post<AuthResponse>('/auth/login', data);
-    localStorage.setItem('token', res.data.token);
     set({ user: res.data.user, isAuthenticated: true });
   },
 
   register: async (data: RegisterData) => {
     const res = await api.post<AuthResponse>('/auth/register', data);
-    localStorage.setItem('token', res.data.token);
     set({ user: res.data.user, isAuthenticated: true });
   },
 
@@ -39,7 +37,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       // Continue anyway
     }
-    localStorage.removeItem('token');
     set({ user: null, isAuthenticated: false });
   },
 

@@ -10,17 +10,15 @@ function AuthCallbackContent() {
   const { checkAuth } = useAuthStore();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-
-    if (token) {
-      localStorage.setItem('token', token);
-      checkAuth().then(() => {
-        router.replace('/dashboard');
-      });
-    } else {
+    // We don't store the token in localStorage anymore for security.
+    // The backend should have set the httpOnly cookie during redirect.
+    // checkAuth() will verify if the session is valid.
+    checkAuth().then(() => {
+      router.replace('/dashboard');
+    }).catch(() => {
       router.replace('/login?error=oauth_failed');
-    }
-  }, [searchParams, router, checkAuth]);
+    });
+  }, [router, checkAuth]);
 
   return (
     <div className="text-center">

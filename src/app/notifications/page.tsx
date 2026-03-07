@@ -78,7 +78,7 @@ export default function NotificationsPage() {
   return (
     <div className="max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-[var(--foreground)]">Notificaciones</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>
@@ -93,7 +93,7 @@ export default function NotificationsPage() {
               style={{ borderColor: 'var(--border)' }}
             >
               <HiOutlineCheckCircle size={14} />
-              Marcar todas leídas
+              <span className="hidden sm:inline">Marcar todas leídas</span>
             </button>
           )}
           {notifications.length > 0 && (
@@ -103,7 +103,7 @@ export default function NotificationsPage() {
               style={{ borderColor: 'var(--border)' }}
             >
               <HiOutlineTrash size={14} />
-              Limpiar
+              <span className="hidden sm:inline">Limpiar</span>
             </button>
           )}
         </div>

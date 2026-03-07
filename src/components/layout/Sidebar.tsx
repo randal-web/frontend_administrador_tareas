@@ -139,7 +139,7 @@ export default function Sidebar() {
               <HiOutlineViewGrid size={16} />
               {sidebarOpen && 'Dashboard'}
             </Link>
-            <Link href="/dashboard" onClick={handleNavClick} className={navLinkClass('/today')} style={navLinkStyle('/today')} title={!sidebarOpen ? 'Hoy' : undefined}>
+            <Link href="/today" onClick={handleNavClick} className={navLinkClass('/today')} style={navLinkStyle('/today')} title={!sidebarOpen ? 'Hoy' : undefined}>
               <HiOutlineCalendar size={16} />
               {sidebarOpen && 'Hoy'}
             </Link>
@@ -176,14 +176,7 @@ export default function Sidebar() {
             </Link>
             <Link href="/notes" onClick={handleNavClick} className={navLinkClass('/notes')} style={navLinkStyle('/notes')} title={!sidebarOpen ? 'Notas' : undefined}>
               <HiOutlineDocumentText size={16} />
-              {sidebarOpen && (
-                <>
-                  <span className="flex-1">Notas</span>
-                  {notes.length > 0 && (
-                    <span className={badgeClass('/notes')}>{notes.length}</span>
-                  )}
-                </>
-              )}
+              {sidebarOpen && <span className="flex-1">Notas</span>}
             </Link>
             <Link href="/reminders" onClick={handleNavClick} className={navLinkClass('/reminders')} style={navLinkStyle('/reminders')} title={!sidebarOpen ? 'Pendientes' : undefined}>
               <HiOutlineExclamationCircle size={16} />

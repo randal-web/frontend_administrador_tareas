@@ -129,6 +129,7 @@ export interface Note {
   content: string | null;
   color: NoteColor;
   is_pinned: boolean;
+  is_important: boolean;
   created_at: string;
   updated_at: string;
   createdAt?: string;

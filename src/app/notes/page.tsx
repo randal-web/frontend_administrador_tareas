@@ -10,9 +10,11 @@ import {
   HiOutlineX,
   HiOutlineTrash,
   HiOutlinePencil,
+  HiOutlineStar,
 } from 'react-icons/hi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { BsPinAngle, BsPinAngleFill } from 'react-icons/bs';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 
 const colorConfig: Record<NoteColor, { bg: string; fold: string; border: string }> = {
   yellow: { bg: '#fefce8', fold: '#fde047', border: '#fef08a' },
@@ -33,7 +35,7 @@ const fmtDate = (d: string) => {
 };
 
 export default function NotesPage() {
-  const { notes, isLoading, fetchNotes, createNote, updateNote, deleteNote, togglePin } = useNoteStore();
+  const { notes, isLoading, fetchNotes, createNote, updateNote, deleteNote, togglePin, toggleImportant } = useNoteStore();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -88,7 +90,7 @@ export default function NotesPage() {
   return (
     <div className="max-w-full">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-[var(--foreground)]">Notas</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>
@@ -134,7 +136,7 @@ export default function NotesPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {pinnedNotes.map(note => (
-                  <NoteCard key={note.id} note={note} onClick={openView} onEdit={openEdit} onDelete={handleDelete} onTogglePin={togglePin} />
+                  <NoteCard key={note.id} note={note} onClick={openView} onEdit={openEdit} onDelete={handleDelete} onTogglePin={togglePin} onToggleImportant={toggleImportant} />
                 ))}
               </div>
             </div>
@@ -149,7 +151,7 @@ export default function NotesPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {otherNotes.map(note => (
-                  <NoteCard key={note.id} note={note} onClick={openView} onEdit={openEdit} onDelete={handleDelete} onTogglePin={togglePin} />
+                  <NoteCard key={note.id} note={note} onClick={openView} onEdit={openEdit} onDelete={handleDelete} onTogglePin={togglePin} onToggleImportant={toggleImportant} />
                 ))}
               </div>
             </div>
@@ -172,6 +174,13 @@ export default function NotesPage() {
                     className="p-1 rounded-lg hover:bg-black/5 transition-colors text-gray-500"
                   >
                     {viewNote.is_pinned ? <BsPinAngleFill size={16} /> : <BsPinAngle size={16} />}
+                  </button>
+                  <button
+                    onClick={() => toggleImportant(viewNote.id).then(() => { setViewNote({ ...viewNote, is_important: !viewNote.is_important }); })}
+                    className="p-1 rounded-lg hover:bg-black/5 transition-colors"
+                    title={viewNote.is_important ? 'Quitar de importantes' : 'Marcar como importante'}
+                  >
+                    <HiOutlineStar size={16} className={viewNote.is_important ? 'text-amber-400 fill-amber-400' : 'text-gray-400'} style={viewNote.is_important ? { fill: '#fbbf24' } : {}} />
                   </button>
                 </div>
                 <div className="flex items-center gap-1">
@@ -199,7 +208,7 @@ export default function NotesPage() {
               <div className="p-5">
                 <h2 className="text-lg font-bold text-gray-900 mb-3">{viewNote.title}</h2>
                 {viewNote.content ? (
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{viewNote.content}</p>
+                  <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: viewNote.content }} />
                 ) : (
                   <p className="text-sm italic" style={{ color: 'var(--muted)' }}>Sin contenido</p>
                 )}
@@ -245,12 +254,9 @@ export default function NotesPage() {
 
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--muted)' }}>Contenido</label>
-                <textarea
+                <RichTextEditor
                   value={form.content}
-                  onChange={e => setForm(prev => ({ ...prev, content: e.target.value }))}
-                  rows={4}
-                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-black/10 resize-none"
-                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg)' }}
+                  onChange={content => setForm(prev => ({ ...prev, content }))}
                   placeholder="Escribe tu nota..."
                 />
               </div>
@@ -310,12 +316,14 @@ function NoteCard({
   onEdit,
   onDelete,
   onTogglePin,
+  onToggleImportant,
 }: {
   note: Note;
   onClick: (n: Note) => void;
   onEdit: (n: Note) => void;
   onDelete: (id: string) => void;
   onTogglePin: (id: string) => void;
+  onToggleImportant: (id: string) => void;
 }) {
   const cfg = colorConfig[note.color] || colorConfig.yellow;
 
@@ -328,16 +336,30 @@ function NoteCard({
       {/* Content area */}
       <div className="p-4 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-bold text-gray-900 line-clamp-2">{note.title}</h3>
-          <button
-            onClick={e => { e.stopPropagation(); onTogglePin(note.id); }}
-            className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors text-gray-400 hover:text-gray-600"
-          >
-            {note.is_pinned ? <BsPinAngleFill size={14} /> : <BsPinAngle size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />}
-          </button>
+          <div className="flex items-center gap-1.5 min-w-0">
+            {note.is_important && (
+              <HiOutlineStar size={13} className="text-amber-400 flex-shrink-0" style={{ fill: '#fbbf24' }} />
+            )}
+            <h3 className="text-sm font-bold text-gray-900 line-clamp-2">{note.title}</h3>
+          </div>
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <button
+              onClick={e => { e.stopPropagation(); onToggleImportant(note.id); }}
+              className="p-1 rounded-lg hover:bg-black/5 transition-colors text-gray-400 hover:text-amber-400"
+              title={note.is_important ? 'Quitar de importantes' : 'Marcar como importante'}
+            >
+              <HiOutlineStar size={13} className={note.is_important ? 'text-amber-400' : 'opacity-0 group-hover:opacity-100 transition-opacity'} style={note.is_important ? { fill: '#fbbf24' } : {}} />
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); onTogglePin(note.id); }}
+              className="p-1 rounded-lg hover:bg-black/5 transition-colors text-gray-400 hover:text-gray-600"
+            >
+              {note.is_pinned ? <BsPinAngleFill size={14} /> : <BsPinAngle size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />}
+            </button>
+          </div>
         </div>
         {note.content && (
-          <p className="text-xs text-gray-600 mt-1.5 line-clamp-3 leading-relaxed">{note.content}</p>
+          <div className="text-xs text-gray-600 mt-1.5 line-clamp-3 leading-relaxed [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4" dangerouslySetInnerHTML={{ __html: note.content }} />
         )}
       </div>
 

@@ -11,6 +11,7 @@ interface NoteState {
   updateNote: (id: string, data: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   togglePin: (id: string) => Promise<void>;
+  toggleImportant: (id: string) => Promise<void>;
 }
 
 export const useNoteStore = create<NoteState>((set, get) => ({
@@ -44,6 +45,11 @@ export const useNoteStore = create<NoteState>((set, get) => ({
 
   togglePin: async (id) => {
     await api.patch(`/notes/${id}/pin`);
+    await get().fetchNotes();
+  },
+
+  toggleImportant: async (id) => {
+    await api.patch(`/notes/${id}/important`);
     await get().fetchNotes();
   },
 }));

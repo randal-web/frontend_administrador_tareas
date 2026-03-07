@@ -135,7 +135,7 @@ export default function RemindersPage() {
   return (
     <div className="max-w-full">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-[var(--foreground)]">Pendientes</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>
@@ -145,7 +145,7 @@ export default function RemindersPage() {
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors hover:bg-gray-50" style={{ borderColor: 'var(--border)' }}>
             <HiOutlineFilter size={14} />
-            Filtros
+            <span className="hidden sm:inline">Filtros</span>
           </button>
           <button
             onClick={openCreate}
@@ -153,7 +153,7 @@ export default function RemindersPage() {
             style={{ backgroundColor: 'var(--foreground)' }}
           >
             <HiOutlinePlus size={14} />
-            Nuevo Pendiente
+            <span className="hidden xs:inline">Nuevo Pendiente</span>
           </button>
         </div>
       </div>

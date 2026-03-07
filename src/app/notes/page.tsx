@@ -11,6 +11,7 @@ import {
   HiOutlineTrash,
   HiOutlinePencil,
 } from 'react-icons/hi';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { BsPinAngle, BsPinAngleFill } from 'react-icons/bs';
 
 const colorConfig: Record<NoteColor, { bg: string; fold: string; border: string }> = {
@@ -37,6 +38,7 @@ export default function NotesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [viewNote, setViewNote] = useState<Note | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', content: '', color: 'yellow' as NoteColor });
 
   useEffect(() => {
@@ -73,9 +75,14 @@ export default function NotesPage() {
     setModalOpen(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar esta nota?')) return;
-    await deleteNote(id);
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    await deleteNote(confirmDeleteId);
+    setConfirmDeleteId(null);
   };
 
   return (
@@ -283,6 +290,14 @@ export default function NotesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="¿Eliminar esta nota?"
+        message="Esta acción no se puede deshacer."
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

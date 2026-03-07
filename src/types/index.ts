@@ -135,10 +135,45 @@ export interface Note {
   updatedAt?: string;
 }
 
+// Reminder
+export type ReminderType = 'reminder' | 'meeting' | 'event' | 'review';
+export type ReminderPriority = 'high' | 'medium' | 'low';
+
+export interface Reminder {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  type: ReminderType;
+  priority: ReminderPriority;
+  due_date: string;
+  due_time: string | null;
+  project_name: string | null;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // Dashboard Summary
 export interface DaySummary {
   total: number;
   completed: number;
   pending: number;
   date: string;
+}
+
+// Notification
+export type NotificationType = 'morning_tasks' | 'morning_reminders' | 'evening_pending' | 'task_due' | 'reminder_due';
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  is_read: boolean;
+  reference_id: string | null;
+  reference_type: string | null;
+  created_at: string;
+  updated_at: string;
 }

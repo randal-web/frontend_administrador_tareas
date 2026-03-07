@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useProjectStore } from '@/stores/projectStore';
 import { HiOutlinePlus, HiOutlineFolder, HiOutlineTrash, HiOutlinePencil, HiOutlineX, HiOutlineCalendar, HiOutlineDotsHorizontal, HiOutlineEye, HiOutlineArchive } from 'react-icons/hi';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function ProjectsPage() {
   const { projects, isLoading, fetchProjects, createProject, updateProject, deleteProject } = useProjectStore();
@@ -14,6 +15,7 @@ export default function ProjectsPage() {
   const [formData, setFormData] = useState({ name: '', description: '', color_hex: '#6366f1' });
   const [activeTab, setActiveTab] = useState<'folders' | 'stats'>('folders');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,11 +46,15 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de eliminar este proyecto? Se desvinculará de las tareas asociadas.')) {
-      await deleteProject(id);
-      setOpenMenuId(null);
-    }
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+    setOpenMenuId(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    await deleteProject(confirmDeleteId);
+    setConfirmDeleteId(null);
   };
 
   const handleArchive = async (id: string) => {
@@ -387,6 +393,14 @@ export default function ProjectsPage() {
           })()}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="¿Eliminar este proyecto?"
+        message="Se desvinculará de las tareas asociadas. Esta acción no se puede deshacer."
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

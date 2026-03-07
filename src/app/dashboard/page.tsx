@@ -9,6 +9,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { Task } from '@/types';
 import CreateTaskModal from '@/components/tasks/CreateTaskModal';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import {
   HiOutlineChevronDown,
   HiOutlineChevronRight,
@@ -77,6 +78,7 @@ export default function DashboardPage() {
   const [filterProject, setFilterProject] = useState<string[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const activeFilterCount = filterPriority.length + filterCategory.length + filterProject.length;
 
@@ -246,10 +248,15 @@ export default function DashboardPage() {
     setDetailModalOpen(true);
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('¿Eliminar esta tarea?')) return;
-    await deleteTask(taskId);
+  const handleDeleteTask = (taskId: string) => {
+    setConfirmDeleteId(taskId);
     setOpenMenuId(null);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!confirmDeleteId) return;
+    await deleteTask(confirmDeleteId);
+    setConfirmDeleteId(null);
   };
 
   const handleEditTask = (taskId: string) => {
@@ -931,6 +938,14 @@ export default function DashboardPage() {
           setDetailModalOpen(false);
           setSelectedTaskId(null);
         }}
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="¿Eliminar esta tarea?"
+        message="Esta acción no se puede deshacer."
+        onConfirm={confirmDeleteTask}
+        onCancel={() => setConfirmDeleteId(null)}
       />
     </div>
   );

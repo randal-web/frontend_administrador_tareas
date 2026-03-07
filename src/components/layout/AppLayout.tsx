@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useNotificationStore } from '@/stores/notificationStore';
+import Link from 'next/link';
 import Sidebar from './Sidebar';
 import { HiOutlineMenu, HiOutlineSearch, HiOutlineBell, HiOutlineLogout } from 'react-icons/hi';
 
@@ -12,6 +14,7 @@ const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth, user, logout } = useAuthStore();
   const { sidebarOpen, setMobileSidebarOpen } = useUIStore();
+  const { unreadCount } = useNotificationStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -93,9 +96,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
               <HiOutlineSearch size={18} />
             </button>
-            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 relative">
+            <Link href="/notifications" className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 relative">
               <HiOutlineBell size={18} />
-            </button>
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white" />
+              )}
+            </Link>
             <button
               onClick={handleLogout}
               className="p-2 rounded-lg hover:bg-red-50 transition-colors text-gray-400 hover:text-red-500"

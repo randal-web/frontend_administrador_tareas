@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Task, TaskPriority, TaskCategory } from '@/types';
 import { useTaskStore } from '@/stores/taskStore';
 import { HiOutlineX, HiOutlineCheck, HiOutlineTrash, HiOutlinePlus, HiOutlinePencil } from 'react-icons/hi';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 interface TaskDetailModalProps {
   taskId: string | null;
@@ -35,6 +36,7 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
   const [newSubtask, setNewSubtask] = useState('');
   const [newComment, setNewComment] = useState('');
   const [editing, setEditing] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [editData, setEditData] = useState({ title: '', description: '', priority: 'MEDIUM' as TaskPriority, category: 'PERSONAL' as TaskCategory, start_date: '', end_date: '' });
 
   useEffect(() => {
@@ -86,9 +88,14 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
     }
   };
 
-  const handleDelete = async () => {
-    if (taskId && confirm('¿Estás seguro de eliminar esta tarea?')) {
+  const handleDelete = () => {
+    setConfirmDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (taskId) {
       await deleteTask(taskId);
+      setConfirmDeleteOpen(false);
       onClose();
     }
   };
@@ -331,6 +338,14 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmDeleteOpen}
+        title="¿Eliminar esta tarea?"
+        message="Esta acción no se puede deshacer."
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   );
 }

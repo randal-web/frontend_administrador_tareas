@@ -20,6 +20,7 @@ import {
   HiOutlinePencil,
   HiOutlineTrash,
 } from 'react-icons/hi';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 const fmtDate = (d: string) => d.split('-').reverse().join('/');
 
@@ -55,6 +56,7 @@ export default function ProjectDetailPage() {
   const [collapsedStatuses, setCollapsedStatuses] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -89,10 +91,15 @@ export default function ProjectDetailPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleDeleteTask = async (id: string) => {
-    if (!confirm('¿Eliminar esta tarea?')) return;
-    await deleteTask(id);
+  const handleDeleteTask = (id: string) => {
+    setConfirmDeleteId(id);
     setOpenMenuId(null);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!confirmDeleteId) return;
+    await deleteTask(confirmDeleteId);
+    setConfirmDeleteId(null);
     fetchProjectBoard(projectId);
     fetchProject(projectId);
   };
@@ -478,6 +485,14 @@ export default function ProjectDetailPage() {
           fetchProjectBoard(projectId);
           fetchProject(projectId);
         }}
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="¿Eliminar esta tarea?"
+        message="Esta acción no se puede deshacer."
+        onConfirm={confirmDeleteTask}
+        onCancel={() => setConfirmDeleteId(null)}
       />
     </div>
   );

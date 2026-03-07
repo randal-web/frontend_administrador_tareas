@@ -6,6 +6,7 @@ import { Habit, WeekDay } from '@/types';
 import { format, startOfWeek, addDays, addWeeks, isBefore, isAfter, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiCheck, HiX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 const dayLabelsShort = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 const dayLabelsFull = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -23,6 +24,7 @@ export default function HabitsPage() {
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [form, setForm] = useState({ name: '', description: '', frequency: [...dayIndices] as number[], color: '#6366f1' });
   const [weekOffset, setWeekOffset] = useState(0);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const today = new Date();
   const currentWeekStart = startOfWeek(addWeeks(today, weekOffset), { weekStartsOn: 1 });
@@ -64,9 +66,14 @@ export default function HabitsPage() {
     fetchWeeklyHabits(weekStartStr);
   };
 
-  const handleDelete = async (habitId: string) => {
-    if (!confirm('¿Eliminar este hábito?')) return;
-    await deleteHabit(habitId);
+  const handleDelete = (habitId: string) => {
+    setConfirmDeleteId(habitId);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    await deleteHabit(confirmDeleteId);
+    setConfirmDeleteId(null);
     fetchWeeklyHabits(weekStartStr);
   };
 
@@ -376,6 +383,14 @@ export default function HabitsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="¿Eliminar este hábito?"
+        message="Se perderá todo el historial. Esta acción no se puede deshacer."
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

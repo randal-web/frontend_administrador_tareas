@@ -6,6 +6,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { useHabitStore } from '@/stores/habitStore';
+import { useNoteStore } from '@/stores/noteStore';
 import {
   HiOutlineViewGrid,
   HiOutlineCalendar,
@@ -25,6 +26,7 @@ export default function Sidebar() {
   const { user } = useAuthStore();
   const { projects } = useProjectStore();
   const { habits } = useHabitStore();
+  const { notes } = useNoteStore();
 
   const handleNavClick = () => {
     if (mobileSidebarOpen) setMobileSidebarOpen(false);
@@ -160,17 +162,17 @@ export default function Sidebar() {
                 </>
               )}
             </Link>
-            {sidebarOpen ? (
-              <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-gray-300 cursor-default">
-                <HiOutlineDocumentText size={16} />
-                <span className="flex-1">Notas</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400">Pronto</span>
-              </div>
-            ) : (
-              <div className="hidden md:flex justify-center py-1.5 text-gray-300" title="Notas (Pronto)">
-                <HiOutlineDocumentText size={15} />
-              </div>
-            )}
+            <Link href="/notes" onClick={handleNavClick} className={navLinkClass('/notes')} style={navLinkStyle('/notes')} title={!sidebarOpen ? 'Notas' : undefined}>
+              <HiOutlineDocumentText size={16} />
+              {sidebarOpen && (
+                <>
+                  <span className="flex-1">Notas</span>
+                  {notes.length > 0 && (
+                    <span className={badgeClass('/notes')}>{notes.length}</span>
+                  )}
+                </>
+              )}
+            </Link>
           </div>
 
           {/* CONFIGURACIÓN */}

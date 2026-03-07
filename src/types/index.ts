@@ -119,6 +119,22 @@ export interface WeekDay {
   log_id: string | null;
 }
 
+// Note
+export type NoteColor = 'yellow' | 'blue' | 'green' | 'purple' | 'pink';
+
+export interface Note {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string | null;
+  color: NoteColor;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Dashboard Summary
 export interface DaySummary {
   total: number;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useReminderStore } from '@/stores/reminderStore';
+import { useUIStore } from '@/stores/uiStore';
 import { Reminder, ReminderType, ReminderPriority } from '@/types';
 import { getLocalDateString } from '@/lib/dateUtils';
 import {
@@ -43,6 +44,7 @@ const priorityConfig: Record<ReminderPriority, { label: string; color: string; b
 
 export default function RemindersPage() {
   const { reminders, archivedReminders, isLoading, fetchReminders, fetchArchivedReminders, createReminder, updateReminder, deleteReminder, toggleComplete } = useReminderStore();
+  const { searchTerm } = useUIStore();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
@@ -82,9 +84,19 @@ export default function RemindersPage() {
     return getLocalDateString(d);
   })();
 
-  const todayReminders = useMemo(() => reminders.filter(r => r.due_date === today), [reminders, today]);
-  const tomorrowReminders = useMemo(() => reminders.filter(r => r.due_date === tomorrow), [reminders, tomorrow]);
-  const futureReminders = useMemo(() => reminders.filter(r => r.due_date > tomorrow), [reminders, tomorrow]);
+  const filteredReminders = useMemo(() => {
+    if (!searchTerm) return reminders;
+    const term = searchTerm.toLowerCase();
+    return reminders.filter(r => 
+      r.title.toLowerCase().includes(term) || 
+      r.description?.toLowerCase().includes(term) ||
+      r.project_name?.toLowerCase().includes(term)
+    );
+  }, [reminders, searchTerm]);
+
+  const todayReminders = useMemo(() => filteredReminders.filter(r => r.due_date === today), [filteredReminders, today]);
+  const tomorrowReminders = useMemo(() => filteredReminders.filter(r => r.due_date === tomorrow), [filteredReminders, tomorrow]);
+  const futureReminders = useMemo(() => filteredReminders.filter(r => r.due_date > tomorrow), [filteredReminders, tomorrow]);
 
   const openCreate = () => {
     setEditingReminder(null);

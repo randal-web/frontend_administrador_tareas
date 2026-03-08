@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useNoteStore } from '@/stores/noteStore';
+import { useUIStore } from '@/stores/uiStore';
 import { Note, NoteColor } from '@/types';
 import {
   HiOutlineFilter,
@@ -36,6 +37,7 @@ const fmtDate = (d: string) => {
 
 export default function NotesPage() {
   const { notes, isLoading, fetchNotes, createNote, updateNote, deleteNote, togglePin, toggleImportant } = useNoteStore();
+  const { searchTerm } = useUIStore();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -47,8 +49,17 @@ export default function NotesPage() {
     fetchNotes();
   }, [fetchNotes]);
 
-  const pinnedNotes = useMemo(() => notes.filter(n => n.is_pinned), [notes]);
-  const otherNotes = useMemo(() => notes.filter(n => !n.is_pinned), [notes]);
+  const filteredNotes = useMemo(() => {
+    if (!searchTerm) return notes;
+    const term = searchTerm.toLowerCase();
+    return notes.filter(n => 
+      n.title.toLowerCase().includes(term) || 
+      n.content?.toLowerCase().includes(term)
+    );
+  }, [notes, searchTerm]);
+
+  const pinnedNotes = useMemo(() => filteredNotes.filter(n => n.is_pinned), [filteredNotes]);
+  const otherNotes = useMemo(() => filteredNotes.filter(n => !n.is_pinned), [filteredNotes]);
 
   const openCreate = () => {
     setEditingNote(null);

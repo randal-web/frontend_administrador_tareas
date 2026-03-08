@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import Link from 'next/link';
 import Sidebar from './Sidebar';
+import SearchModal from './SearchModal';
 import {
   HiOutlineMenu,
   HiOutlineSearch,
@@ -20,7 +21,7 @@ const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth, user, logout } = useAuthStore();
-  const { sidebarOpen, setMobileSidebarOpen } = useUIStore();
+  const { sidebarOpen, toggleSidebar, setMobileSidebarOpen, setIsSearchOpen } = useUIStore();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -112,7 +113,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Right: search, user */}
           <div className="flex items-center gap-2">
-            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
+            <button 
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+            >
               <HiOutlineSearch size={18} />
             </button>
             <div ref={userMenuRef} className="relative hidden sm:flex items-center ml-1 pl-2 border-l" style={{ borderColor: 'var(--border)' }}>
@@ -194,6 +198,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+      <SearchModal />
     </div>
   );
 }

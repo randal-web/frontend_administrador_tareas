@@ -7,6 +7,7 @@ import { useTaskStore } from '@/stores/taskStore';
 import { useHabitStore } from '@/stores/habitStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
 import { Task } from '@/types';
 import { getLocalDateString } from '@/lib/dateUtils';
 import CreateTaskModal from '@/components/tasks/CreateTaskModal';
@@ -52,6 +53,7 @@ const statusConfig: Record<string, { label: string; color: string; dot: string }
 };
 
 export default function DashboardPage() {
+  const { searchTerm } = useUIStore();
   const {
     tasks,
     upcomingTasks,
@@ -162,6 +164,7 @@ export default function DashboardPage() {
   // Filtered tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter(t => {
+      if (searchTerm && !t.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
       if (filterPriority.length > 0 && !filterPriority.includes(t.priority)) return false;
       if (filterCategory.length > 0 && !filterCategory.includes(t.category)) return false;
       if (filterProject.length > 0) {
@@ -170,7 +173,7 @@ export default function DashboardPage() {
       }
       return true;
     });
-  }, [tasks, filterPriority, filterCategory, filterProject]);
+  }, [tasks, filterPriority, filterCategory, filterProject, searchTerm]);
 
   // Group tasks: status → project
   const groupedByStatus = useMemo(() => {
@@ -224,11 +227,15 @@ export default function DashboardPage() {
   // Today's habits with streak info
   const todayStr = getLocalDateString();
   const todaysHabits = useMemo(() => {
-    return weeklyHabits.map(h => {
+    let base = weeklyHabits.map(h => {
       const todayDay = h.week?.find(d => d.date === todayStr);
       return { ...h, todayCompleted: todayDay?.is_completed || false, todayDate: todayStr };
     });
-  }, [weeklyHabits, todayStr]);
+    if (searchTerm) {
+      base = base.filter(h => h.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return base;
+  }, [weeklyHabits, todayStr, searchTerm]);
 
   // Tomorrow / upcoming tasks breakdown
   const currentDateObj = new Date(currentDate + 'T00:00:00');
@@ -236,18 +243,31 @@ export default function DashboardPage() {
   const isToday = currentDate === todayStr;
 
   // Filter upcoming: tasks visible on tomorrow (start_date <= tomorrow && (end_date >= tomorrow || no end_date))
-  const tomorrowTasks = upcomingTasks.filter(t => {
-    const start = t.start_date || '';
-    const end = t.end_date || start;
-    return start <= tomorrowDate && end >= tomorrowDate;
-  });
+  const tomorrowTasks = useMemo(() => {
+    let filtered = upcomingTasks.filter(t => {
+      const start = t.start_date || '';
+      const end = t.end_date || start;
+      return start <= tomorrowDate && end >= tomorrowDate;
+    });
+    if (searchTerm) {
+      filtered = filtered.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return filtered;
+  }, [upcomingTasks, tomorrowDate, searchTerm]);
+
   // Filter upcoming: tasks visible after tomorrow
-  const futureTasks = upcomingTasks.filter(t => {
-    const start = t.start_date || '';
-    const end = t.end_date || start;
-    // Visible on at least one day after tomorrow
-    return end > tomorrowDate || start > tomorrowDate;
-  });
+  const futureTasks = useMemo(() => {
+    let filtered = upcomingTasks.filter(t => {
+      const start = t.start_date || '';
+      const end = t.end_date || start;
+      // Visible on at least one day after tomorrow
+      return end > tomorrowDate || start > tomorrowDate;
+    });
+    if (searchTerm) {
+      filtered = filtered.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return filtered;
+  }, [upcomingTasks, tomorrowDate, searchTerm]);
 
   const navigateDate = (offset: number) => {
     const newDate = offset === 0

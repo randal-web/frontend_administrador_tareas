@@ -9,6 +9,7 @@ import { useHabitStore } from '@/stores/habitStore';
 import { useReminderStore } from '@/stores/reminderStore';
 import { useNoteStore } from '@/stores/noteStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
 import { getLocalDateString } from '@/lib/dateUtils';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import { useState } from 'react';
@@ -49,6 +50,7 @@ const noteColorMap: Record<string, { bg: string; border: string; text: string }>
 
 export default function TodayPage() {
   const todayStr = getLocalDateString();
+  const { searchTerm } = useUIStore();
 
   const {
     tasks,
@@ -89,33 +91,65 @@ export default function TodayPage() {
   }, [todayStr]);
 
   // Today's pending tasks (not DONE)
-  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'DONE'), [tasks]);
-  const completedTasks = useMemo(() => tasks.filter(t => t.status === 'DONE'), [tasks]);
+  const pendingTasks = useMemo(() => {
+    let filtered = tasks.filter(t => t.status !== 'DONE');
+    if (searchTerm) {
+      filtered = filtered.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return filtered;
+  }, [tasks, searchTerm]);
+
+  const completedTasks = useMemo(() => {
+    let filtered = tasks.filter(t => t.status === 'DONE');
+    if (searchTerm) {
+      filtered = filtered.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return filtered;
+  }, [tasks, searchTerm]);
 
   // Today's habits
   const todaysHabits = useMemo(() => {
-    return weeklyHabits.map(h => {
+    let base = weeklyHabits.map(h => {
       const todayDay = h.week?.find(d => d.date === todayStr);
       return { ...h, todayCompleted: todayDay?.is_completed || false };
     });
-  }, [weeklyHabits, todayStr]);
+    if (searchTerm) {
+      base = base.filter(h => h.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return base;
+  }, [weeklyHabits, todayStr, searchTerm]);
 
   const habitsCompleted = todaysHabits.filter(h => h.todayCompleted).length;
 
   // Today's meetings (reminders with type 'meeting' due today)
   const todayMeetings = useMemo(() => {
-    return reminders.filter(r => r.type === 'meeting' && r.due_date === todayStr && !r.is_completed);
-  }, [reminders, todayStr]);
+    let filtered = reminders.filter(r => r.type === 'meeting' && r.due_date === todayStr && !r.is_completed);
+    if (searchTerm) {
+      filtered = filtered.filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return filtered;
+  }, [reminders, todayStr, searchTerm]);
 
   // Today's reminders/pendientes (due today, excluding meetings)
   const todayReminders = useMemo(() => {
-    return reminders.filter(r => r.due_date === todayStr && r.type !== 'meeting' && !r.is_completed);
-  }, [reminders, todayStr]);
+    let filtered = reminders.filter(r => r.due_date === todayStr && r.type !== 'meeting' && !r.is_completed);
+    if (searchTerm) {
+      filtered = filtered.filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return filtered;
+  }, [reminders, todayStr, searchTerm]);
 
   // Important notes
   const importantNotes = useMemo(() => {
-    return notes.filter(n => n.is_important);
-  }, [notes]);
+    let filtered = notes.filter(n => n.is_important);
+    if (searchTerm) {
+      filtered = filtered.filter(n => 
+        n.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        n.content?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return filtered;
+  }, [notes, searchTerm]);
 
   // Summary stats
   const totalTasks = daySummary?.total || 0;

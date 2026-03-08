@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useHabitStore } from '@/stores/habitStore';
+import { useUIStore } from '@/stores/uiStore';
 import { Habit, WeekDay } from '@/types';
 import { format, startOfWeek, addDays, addWeeks, isBefore, isAfter, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -19,6 +20,7 @@ const colors = [
 
 export default function HabitsPage() {
   const { habits, weeklyHabits, fetchHabits, fetchWeeklyHabits, createHabit, updateHabit, deleteHabit, toggleLog, isLoading: loading } = useHabitStore();
+  const { searchTerm } = useUIStore();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
@@ -36,6 +38,11 @@ export default function HabitsPage() {
     fetchHabits();
     fetchWeeklyHabits(weekStartStr);
   }, [fetchHabits, fetchWeeklyHabits, weekStartStr]);
+
+  const filteredWeeklyHabits = useMemo(() => {
+    if (!searchTerm) return weeklyHabits;
+    return weeklyHabits.filter(h => h.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [weeklyHabits, searchTerm]);
 
   const openCreate = () => {
     setForm({ name: '', description: '', frequency: [...dayIndices], color: '#6366f1' });
@@ -176,7 +183,7 @@ export default function HabitsPage() {
       )}
 
       <div className="space-y-3">
-        {weeklyHabits.map(habit => {
+        {filteredWeeklyHabits.map(habit => {
           const streak = getStreak(habit);
           const scheduledThisWeek = (habit.week || []).filter(d => habit.frequency.includes(d.dayIndex)).length;
           const completedThisWeek = (habit.week || []).filter(d => habit.frequency.includes(d.dayIndex) && d.is_completed).length;

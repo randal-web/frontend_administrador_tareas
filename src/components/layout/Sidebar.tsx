@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUIStore } from '@/stores/uiStore';
@@ -25,11 +25,30 @@ import {
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { sidebarOpen, toggleSidebar, mobileSidebarOpen, setMobileSidebarOpen } = useUIStore();
+  const { sidebarOpen, toggleSidebar, mobileSidebarOpen, setMobileSidebarOpen, searchTerm, setSearchTerm, setIsSearchOpen } = useUIStore();
   const { user } = useAuthStore();
   const { projects } = useProjectStore();
   const { habits } = useHabitStore();
   const { reminders } = useReminderStore();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setIsSearchOpen]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    if (val.length > 0) {
+      setIsSearchOpen(true);
+    }
+  };
 
   const handleNavClick = () => {
     if (mobileSidebarOpen) setMobileSidebarOpen(false);
@@ -100,18 +119,38 @@ export default function Sidebar() {
         {sidebarOpen && (
           <div className="px-3 py-2">
             <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] text-gray-400 cursor-pointer hover:bg-[var(--sidebar-hover)] transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] text-gray-400 hover:bg-[var(--sidebar-hover)] transition-colors focus-within:ring-1 focus-within:ring-gray-300"
               style={{ border: '1px solid var(--sidebar-border)' }}
             >
               <HiOutlineSearch size={14} />
-              <span className="flex-1">Buscar</span>
-              <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-gray-200 text-gray-400 bg-gray-50">⌘K</kbd>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Buscar"
+                className="flex-1 bg-transparent border-none outline-none text-[var(--foreground)] placeholder-gray-400 w-full"
+              />
+              {!searchTerm && (
+                <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-gray-200 text-gray-400 bg-gray-50">⌘K</kbd>
+              )}
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  &times;
+                </button>
+              )}
             </div>
           </div>
         )}
         {!sidebarOpen && (
           <div className="hidden md:flex justify-center py-1.5">
-            <button className="p-1.5 rounded-lg text-gray-400 hover:bg-[var(--sidebar-hover)] transition-colors">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-1.5 rounded-lg text-gray-400 hover:bg-[var(--sidebar-hover)] transition-colors"
+            >
               <HiOutlineSearch size={15} />
             </button>
           </div>

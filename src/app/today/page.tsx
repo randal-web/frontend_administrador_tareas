@@ -9,6 +9,7 @@ import { useHabitStore } from '@/stores/habitStore';
 import { useReminderStore } from '@/stores/reminderStore';
 import { useNoteStore } from '@/stores/noteStore';
 import { useAuthStore } from '@/stores/authStore';
+import { getLocalDateString } from '@/lib/dateUtils';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import { useState } from 'react';
 import {
@@ -47,7 +48,7 @@ const noteColorMap: Record<string, { bg: string; border: string; text: string }>
 };
 
 export default function TodayPage() {
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const todayStr = getLocalDateString();
 
   const {
     tasks,
@@ -78,8 +79,9 @@ export default function TodayPage() {
   }, [todayStr, fetchTasksByDate, fetchDaySummary, fetchWeeklyHabits, fetchReminders, fetchNotes]);
 
   const formattedDate = useMemo(() => {
-    return format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
-  }, []);
+    const d = new Date(todayStr + 'T00:00:00');
+    return format(d, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
+  }, [todayStr]);
 
   // Today's pending tasks (not DONE)
   const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'DONE'), [tasks]);

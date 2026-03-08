@@ -178,7 +178,10 @@ export default function ProfilePage() {
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted)' }}>Miembro desde</label>
               <p className="text-sm py-2">
                 {(() => {
-                  const d = new Date(user.created_at);
+                  const u = user as any;
+                  const dateStr = u.created_at || u.createdAt || u.createdAtLocal;
+                  if (!dateStr) return '—';
+                  const d = new Date(dateStr);
                   if (isNaN(d.getTime())) return '—';
                   return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
                 })()}

@@ -12,7 +12,7 @@ interface HabitState {
   createHabit: (data: Partial<Habit>) => Promise<void>;
   updateHabit: (id: string, data: Partial<Habit>) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
-  toggleLog: (habitId: string, date: string) => Promise<void>;
+  toggleLog: (habitId: string, date: string, weekStart?: string) => Promise<void>;
 }
 
 export const useHabitStore = create<HabitState>((set, get) => ({
@@ -58,8 +58,11 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     await get().fetchWeeklyHabits();
   },
 
-  toggleLog: async (habitId, date) => {
+  toggleLog: async (habitId, date, weekStart) => {
     await api.post(`/habits/${habitId}/toggle`, { date });
-    await get().fetchWeeklyHabits();
+    await Promise.all([
+      get().fetchWeeklyHabits(weekStart),
+      get().fetchHabits(),
+    ]);
   },
 }));

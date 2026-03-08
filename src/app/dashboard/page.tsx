@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { format, addDays, subDays } from 'date-fns';
+import { format, addDays, subDays, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useTaskStore } from '@/stores/taskStore';
 import { useHabitStore } from '@/stores/habitStore';
@@ -90,6 +90,11 @@ export default function DashboardPage() {
 
   const activeFilterCount = filterPriority.length + filterCategory.length + filterProject.length;
 
+  const weekStartStr = useMemo(() => {
+    const d = new Date(currentDate + 'T00:00:00');
+    return format(startOfWeek(d, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  }, [currentDate]);
+
   const toggleFilter = (arr: string[], setArr: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
     setArr(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
   };
@@ -144,10 +149,10 @@ export default function DashboardPage() {
     fetchTasksByDate(currentDate);
     fetchUpcoming(currentDate);
     fetchDaySummary(currentDate);
-    fetchWeeklyHabits();
+    fetchWeeklyHabits(weekStartStr);
     fetchHabits();
     fetchProjects();
-  }, [currentDate, fetchTasksByDate, fetchUpcoming, fetchDaySummary, fetchWeeklyHabits, fetchHabits, fetchProjects]);
+  }, [currentDate, weekStartStr, fetchTasksByDate, fetchUpcoming, fetchDaySummary, fetchWeeklyHabits, fetchHabits, fetchProjects]);
 
   const formattedDate = useMemo(() => {
     const d = new Date(currentDate + 'T00:00:00');
@@ -829,7 +834,7 @@ export default function DashboardPage() {
                   <div key={habit.id} className={`flex items-center justify-between ${habit.todayCompleted ? 'bg-[#f2fff2]' : ''} p-1.5 rounded-lg`}>
                     <div className="flex items-center gap-2.5 min-w-0">
                       <button
-                        onClick={() => toggleLog(habit.id, habit.todayDate)}
+                        onClick={() => toggleLog(habit.id, habit.todayDate, weekStartStr)}
                         className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${habit.todayCompleted
                           ? 'bg-black border-black'
                           : 'border-gray-300 hover:border-black'

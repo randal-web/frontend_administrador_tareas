@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { format } from 'date-fns';
+import { format, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { useTaskStore } from '@/stores/taskStore';
@@ -70,13 +70,18 @@ export default function TodayPage() {
     return user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   }, [user]);
 
+  const weekStartStr = useMemo(() => {
+    const d = new Date(todayStr + 'T00:00:00');
+    return format(startOfWeek(d, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  }, [todayStr]);
+
   useEffect(() => {
     fetchTasksByDate(todayStr);
     fetchDaySummary(todayStr);
-    fetchWeeklyHabits();
+    fetchWeeklyHabits(weekStartStr);
     fetchReminders();
     fetchNotes();
-  }, [todayStr, fetchTasksByDate, fetchDaySummary, fetchWeeklyHabits, fetchReminders, fetchNotes]);
+  }, [todayStr, weekStartStr, fetchTasksByDate, fetchDaySummary, fetchWeeklyHabits, fetchReminders, fetchNotes]);
 
   const formattedDate = useMemo(() => {
     const d = new Date(todayStr + 'T00:00:00');
@@ -430,7 +435,7 @@ export default function TodayPage() {
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <button
-                            onClick={() => toggleLog(habit.id, todayStr)}
+                            onClick={() => toggleLog(habit.id, todayStr, weekStartStr)}
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${habit.todayCompleted
                               ? 'bg-green-500 border-green-500 '
                               : 'border-gray-300 hover:border-green-400'

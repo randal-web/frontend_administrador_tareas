@@ -7,6 +7,8 @@ import { useUIStore } from '@/stores/uiStore';
 import Link from 'next/link';
 import Sidebar from './Sidebar';
 import SearchModal from './SearchModal';
+import TaskDetailModal from '@/components/tasks/TaskDetailModal';
+import { useTaskStore } from '@/stores/taskStore';
 import {
   HiOutlineMenu,
   HiOutlineSearch,
@@ -22,6 +24,7 @@ const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth, user, logout } = useAuthStore();
   const { sidebarOpen, toggleSidebar, setMobileSidebarOpen, setIsSearchOpen } = useUIStore();
+  const { selectedTaskId, detailModalOpen, closeTaskDetail } = useTaskStore();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -199,6 +202,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <SearchModal />
+      <TaskDetailModal
+        taskId={selectedTaskId}
+        isOpen={detailModalOpen}
+        onClose={closeTaskDetail}
+      />
     </div>
   );
 }

@@ -10,8 +10,14 @@ interface TaskState {
   daySummary: DaySummary | null;
   isLoading: boolean;
   currentDate: string;
+  selectedTaskId: string | null;
+  detailModalOpen: boolean;
 
   setCurrentDate: (date: string) => void;
+  setSelectedTaskId: (id: string | null) => void;
+  setDetailModalOpen: (open: boolean) => void;
+  openTaskDetail: (id: string) => void;
+  closeTaskDetail: () => void;
   fetchTasksByDate: (date: string) => Promise<void>;
   fetchUpcoming: (fromDate: string) => Promise<void>;
   fetchDaySummary: (date: string) => Promise<void>;
@@ -35,8 +41,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   daySummary: null,
   isLoading: false,
   currentDate: getLocalDateString(),
+  selectedTaskId: null,
+  detailModalOpen: false,
 
   setCurrentDate: (date: string) => set({ currentDate: date }),
+  setSelectedTaskId: (id: string | null) => set({ selectedTaskId: id }),
+  setDetailModalOpen: (open: boolean) => set({ detailModalOpen: open }),
+  
+  openTaskDetail: (id: string) => set({ selectedTaskId: id, detailModalOpen: true }),
+  closeTaskDetail: () => set({ selectedTaskId: null, detailModalOpen: false }),
 
   fetchTasksByDate: async (date: string) => {
     set({ isLoading: true });

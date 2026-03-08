@@ -22,7 +22,7 @@ export default function SearchModal() {
   const router = useRouter();
   const { isSearchOpen, setIsSearchOpen, searchTerm, setSearchTerm } = useUIStore();
   
-  const { tasks } = useTaskStore();
+  const { tasks, openTaskDetail } = useTaskStore();
   const { notes } = useNoteStore();
   const { habits } = useHabitStore();
   const { reminders } = useReminderStore();
@@ -72,7 +72,12 @@ export default function SearchModal() {
   const handleSelect = (result: any) => {
     setIsSearchOpen(false);
     setSearchTerm('');
-    router.push(result.url);
+    
+    if (result.type === 'task') {
+      openTaskDetail(result.id);
+    } else {
+      router.push(result.url);
+    }
   };
 
   if (!isSearchOpen) return null;

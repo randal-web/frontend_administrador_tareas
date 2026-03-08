@@ -1,14 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { HiOutlineUser, HiOutlineMail, HiOutlinePencil, HiOutlineCheck, HiX } from 'react-icons/hi';
+import { HiOutlineUser, HiOutlineMail, HiOutlinePencil, HiOutlineCheck, HiX, HiOutlineCamera } from 'react-icons/hi';
 
 export default function ProfilePage() {
   const { user, updateProfile, isLoading: loading } = useAuthStore();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ full_name: '', avatar_url: '' });
   const [success, setSuccess] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
   useEffect(() => {
     if (user) {
@@ -16,11 +20,61 @@ export default function ProfilePage() {
     }
   }, [user]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !cloudName || !uploadPreset) return;
+
+      // Redimensionar y convertir a base64
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        img.src = ev.target?.result as string;
+        img.onload = async () => {
+          const MAX = 256;
+          const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const base64 = canvas.toDataURL('image/jpeg', 0.85);
+          setPreview(base64);
+          setEditing(true);
+
+          // Subir a Cloudinary
+          const formData = new FormData();
+          formData.append('file', base64);
+          formData.append('upload_preset', uploadPreset);
+          try {
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+              method: 'POST',
+              body: formData,
+            });
+            const data = await res.json();
+            if (data.secure_url) {
+              setPreview(data.secure_url);
+              setForm(prev => ({ ...prev, avatar_url: data.secure_url }));
+            }
+          } catch (err) {
+            // Error de subida
+          }
+        };
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+  };
+
   const handleSave = async () => {
     await updateProfile(form);
     setEditing(false);
+    setPreview(null);
     setSuccess(true);
     setTimeout(() => setSuccess(false), 3000);
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    setPreview(null);
+    setForm({ full_name: user!.full_name, avatar_url: user!.avatar_url || '' });
   };
 
   if (!user) return null;
@@ -39,12 +93,30 @@ export default function ProfilePage() {
       <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
         {/* Avatar */}
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white" style={{ backgroundColor: 'var(--primary)' }}>
-            {user.avatar_url ? (
-              <img src={user.avatar_url} alt={user.full_name} className="w-full h-full rounded-full object-cover" />
-            ) : (
-              user.full_name.charAt(0).toUpperCase()
-            )}
+          <div className="relative w-20 h-20">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white overflow-hidden" style={{ backgroundColor: 'var(--primary)' }}>
+              {(preview || form.avatar_url) ? (
+                <img src={preview || form.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+              ) : (
+                user.full_name.charAt(0).toUpperCase()
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-md transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'var(--primary)' }}
+              title="Cambiar foto"
+            >
+              <HiOutlineCamera size={14} />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
           </div>
           <div>
             <h2 className="text-xl font-semibold">{user.full_name}</h2>
@@ -85,21 +157,6 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted)' }}>URL del avatar</label>
-            {editing ? (
-              <input
-                value={form.avatar_url}
-                onChange={e => setForm(prev => ({ ...prev, avatar_url: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg border text-sm"
-                style={{ borderColor: 'var(--border)' }}
-                placeholder="https://..."
-              />
-            ) : (
-              <p className="text-sm py-2">{user.avatar_url || '—'}</p>
-            )}
-          </div>
-
-          <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted)' }}>Proveedor de autenticación</label>
             <p className="text-sm py-2 capitalize">{user.provider}</p>
           </div>
@@ -117,7 +174,7 @@ export default function ProfilePage() {
           {editing ? (
             <>
               <button
-                onClick={() => { setEditing(false); setForm({ full_name: user.full_name, avatar_url: user.avatar_url || '' }); }}
+                onClick={handleCancel}
                 className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm border"
                 style={{ borderColor: 'var(--border)' }}
               >

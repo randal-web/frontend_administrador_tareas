@@ -303,8 +303,12 @@ export default function ProjectDetailPage() {
                                 </span>
                               )}
                             </div>
-                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ backgroundColor: cfg.dot }}>
-                              {userInitials}
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white overflow-hidden" style={{ backgroundColor: cfg.dot }}>
+                              {user?.avatar_url ? (
+                                <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+                              ) : (
+                                userInitials
+                              )}
                             </div>
                           </div>
                         </div>
@@ -422,8 +426,12 @@ export default function ProjectDetailPage() {
                             )}
                           </div>
                           <div className="col-span-1 flex justify-end">
-                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ backgroundColor: cfg.dot }}>
-                              {userInitials}
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white overflow-hidden" style={{ backgroundColor: cfg.dot }}>
+                              {user?.avatar_url ? (
+                                <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+                              ) : (
+                                userInitials
+                              )}
                             </div>
                           </div>
                         </div>

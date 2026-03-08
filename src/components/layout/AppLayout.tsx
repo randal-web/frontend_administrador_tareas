@@ -4,21 +4,14 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
-import { useNotificationStore } from '@/stores/notificationStore';
 import Link from 'next/link';
 import Sidebar from './Sidebar';
 import {
   HiOutlineMenu,
   HiOutlineSearch,
-  HiOutlineBell,
   HiOutlineLogout,
-  HiOutlineCheck,
-  HiOutlineCheckCircle,
   HiOutlineSun,
   HiOutlineMoon,
-  HiOutlineClipboardList,
-  HiOutlineCalendar,
-  HiOutlineTrash,
   HiOutlineUser,
   HiOutlineCog,
 } from 'react-icons/hi';
@@ -28,10 +21,7 @@ const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth, user, logout } = useAuthStore();
   const { sidebarOpen, setMobileSidebarOpen } = useUIStore();
-  const { notifications, unreadCount, fetchNotifications, generateNotifications, markAsRead, markAllAsRead, deleteNotification } = useNotificationStore();
-  const [bellOpen, setBellOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const bellRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -58,9 +48,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Close dropdowns on click outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
-        setBellOpen(false);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
       }
@@ -68,14 +55,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-
-  // Fetch notifications when authenticated
-  useEffect(() => {
-    if (isAuthenticated && !isPublicPage) {
-      generateNotifications();
-      fetchNotifications();
-    }
-  }, [isAuthenticated, isPublicPage, generateNotifications, fetchNotifications]);
 
   if (isPublicPage) {
     return <>{children}</>;
@@ -131,115 +110,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </h2>
           </div>
 
-          {/* Right: search, notifications, user */}
+          {/* Right: search, user */}
           <div className="flex items-center gap-2">
             <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500">
               <HiOutlineSearch size={18} />
             </button>
-            <div ref={bellRef} className="relative">
-              <button
-                onClick={() => setBellOpen(!bellOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 relative"
-              >
-                <HiOutlineBell size={18} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white" />
-                )}
-              </button>
-
-              {/* Dropdown */}
-              {bellOpen && (
-                <div
-                  className="absolute right-0 top-11 w-[calc(100vw-2rem)] sm:w-96 max-h-[420px] rounded-xl border shadow-2xl flex flex-col overflow-hidden z-50"
-                  style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
-                >
-                  {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-                    <h3 className="text-sm font-semibold text-[var(--foreground)]">
-                      Notificaciones
-                      {unreadCount > 0 && (
-                        <span className="ml-1.5 text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">{unreadCount}</span>
-                      )}
-                    </h3>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={() => markAllAsRead()}
-                        className="text-[11px] font-medium text-blue-500 hover:text-blue-700 transition-colors"
-                      >
-                        Marcar todas leídas
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Items */}
-                  <div className="flex-1 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="text-center py-10">
-                        <HiOutlineBell size={28} className="mx-auto mb-2 text-gray-300" />
-                        <p className="text-xs" style={{ color: 'var(--muted)' }}>Sin notificaciones</p>
-                      </div>
-                    ) : (
-                      notifications.slice(0, 8).map(n => {
-                        const iconMap: Record<string, typeof HiOutlineSun> = {
-                          morning_tasks: HiOutlineSun,
-                          morning_reminders: HiOutlineClipboardList,
-                          evening_pending: HiOutlineMoon,
-                          task_due: HiOutlineCalendar,
-                          reminder_due: HiOutlineBell,
-                        };
-                        const colorMap: Record<string, string> = {
-                          morning_tasks: '#f59e0b',
-                          morning_reminders: '#3b82f6',
-                          evening_pending: '#7c3aed',
-                          task_due: '#ef4444',
-                          reminder_due: '#ea580c',
-                        };
-                        const Icon = iconMap[n.type] || HiOutlineBell;
-                        const color = colorMap[n.type] || '#6b7280';
-
-                        return (
-                          <div
-                            key={n.id}
-                            className={`flex items-start gap-3 px-4 py-3 border-b transition-colors hover:bg-gray-50 ${!n.is_read ? 'bg-blue-50/40' : ''}`}
-                            style={{ borderColor: 'var(--border)' }}
-                          >
-                            <Icon size={16} style={{ color }} className="mt-0.5 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-xs leading-snug ${!n.is_read ? 'font-semibold text-[var(--foreground)]' : 'text-gray-600'}`}>
-                                {n.title}
-                              </p>
-                              <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2 whitespace-pre-line">{n.message}</p>
-                            </div>
-                            <div className="flex items-center gap-0.5 flex-shrink-0">
-                              {!n.is_read && (
-                                <button onClick={() => markAsRead(n.id)} className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-green-500 transition-colors" title="Marcar leída">
-                                  <HiOutlineCheck size={12} />
-                                </button>
-                              )}
-                              <button onClick={() => deleteNotification(n.id)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors" title="Eliminar">
-                                <HiOutlineTrash size={12} />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* Footer */}
-                  {notifications.length > 0 && (
-                    <Link
-                      href="/notifications"
-                      onClick={() => setBellOpen(false)}
-                      className="block text-center text-xs font-medium py-2.5 border-t hover:bg-gray-50 transition-colors"
-                      style={{ borderColor: 'var(--border)', color: 'var(--primary, #3b82f6)' }}
-                    >
-                      Ver todas las notificaciones
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
             <div ref={userMenuRef} className="relative hidden sm:flex items-center ml-1 pl-2 border-l" style={{ borderColor: 'var(--border)' }}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}

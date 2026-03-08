@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '@/lib/api';
 import { Task, DaySummary } from '@/types';
+import { getLocalDateString } from '@/lib/dateUtils';
 
 interface TaskState {
   tasks: Task[];
@@ -33,7 +34,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   upcomingTasks: [],
   daySummary: null,
   isLoading: false,
-  currentDate: new Date().toISOString().split('T')[0],
+  currentDate: getLocalDateString(),
 
   setCurrentDate: (date: string) => set({ currentDate: date }),
 

@@ -8,6 +8,7 @@ import { useHabitStore } from '@/stores/habitStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { useAuthStore } from '@/stores/authStore';
 import { Task } from '@/types';
+import { getLocalDateString } from '@/lib/dateUtils';
 import CreateTaskModal from '@/components/tasks/CreateTaskModal';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -216,7 +217,7 @@ export default function DashboardPage() {
   };
 
   // Today's habits with streak info
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const todayStr = getLocalDateString();
   const todaysHabits = useMemo(() => {
     return weeklyHabits.map(h => {
       const todayDay = h.week?.find(d => d.date === todayStr);
@@ -227,7 +228,7 @@ export default function DashboardPage() {
   // Tomorrow / upcoming tasks breakdown
   const currentDateObj = new Date(currentDate + 'T00:00:00');
   const tomorrowDate = format(addDays(currentDateObj, 1), 'yyyy-MM-dd');
-  const isToday = currentDate === format(new Date(), 'yyyy-MM-dd');
+  const isToday = currentDate === todayStr;
 
   // Filter upcoming: tasks visible on tomorrow (start_date <= tomorrow && (end_date >= tomorrow || no end_date))
   const tomorrowTasks = upcomingTasks.filter(t => {

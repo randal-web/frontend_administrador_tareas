@@ -9,6 +9,7 @@ import { useHabitStore } from '@/stores/habitStore';
 import { useReminderStore } from '@/stores/reminderStore';
 import { useNoteStore } from '@/stores/noteStore';
 import { useAuthStore } from '@/stores/authStore';
+import { getLocalDateString } from '@/lib/dateUtils';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import { useState } from 'react';
 import {
@@ -47,7 +48,7 @@ const noteColorMap: Record<string, { bg: string; border: string; text: string }>
 };
 
 export default function TodayPage() {
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const todayStr = getLocalDateString();
 
   const {
     tasks,
@@ -57,7 +58,7 @@ export default function TodayPage() {
     toggleStatus,
   } = useTaskStore();
   const { weeklyHabits, fetchWeeklyHabits, toggleLog } = useHabitStore();
-  const { reminders, fetchReminders } = useReminderStore();
+  const { reminders, fetchReminders, toggleComplete } = useReminderStore();
   const { notes, fetchNotes, toggleImportant } = useNoteStore();
 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -78,8 +79,9 @@ export default function TodayPage() {
   }, [todayStr, fetchTasksByDate, fetchDaySummary, fetchWeeklyHabits, fetchReminders, fetchNotes]);
 
   const formattedDate = useMemo(() => {
-    return format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
-  }, []);
+    const d = new Date(todayStr + 'T00:00:00');
+    return format(d, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
+  }, [todayStr]);
 
   // Today's pending tasks (not DONE)
   const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'DONE'), [tasks]);
@@ -97,12 +99,12 @@ export default function TodayPage() {
 
   // Today's meetings (reminders with type 'meeting' due today)
   const todayMeetings = useMemo(() => {
-    return reminders.filter(r => r.type === 'meeting' && r.due_date === todayStr);
+    return reminders.filter(r => r.type === 'meeting' && r.due_date === todayStr && !r.is_completed);
   }, [reminders, todayStr]);
 
   // Today's reminders/pendientes (due today, excluding meetings)
   const todayReminders = useMemo(() => {
-    return reminders.filter(r => r.due_date === todayStr && r.type !== 'meeting');
+    return reminders.filter(r => r.due_date === todayStr && r.type !== 'meeting' && !r.is_completed);
   }, [reminders, todayStr]);
 
   // Important notes
@@ -320,7 +322,14 @@ export default function TodayPage() {
                 </div>
               ) : (
                 todayMeetings.map(meeting => (
-                  <div key={meeting.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 rounded-lg transition-colors mx-6 my-2">
+                  <div key={meeting.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 hover:border-solid hover:border-2 hover:border-gray-200 rounded-lg transition-colors mx-6 my-2">
+                    <button 
+                      onClick={() => toggleComplete(meeting.id)}
+                      className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0 transition-colors hover:border-purple-400 flex items-center justify-center mr-1"
+                    >
+                      {meeting.is_completed && <HiOutlineCheck size={10} className="text-purple-500" />}
+                    </button>
+                    
                     {meeting.due_time ? (
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex flex-col items-center justify-center flex-shrink-0">
                         <span className="text-sm font-bold text-white leading-none">{meeting.due_time.slice(0, 2)}</span>
@@ -367,7 +376,12 @@ export default function TodayPage() {
               ) : (
                 todayReminders.map(reminder => (
                   <div key={reminder.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 hover:border-solid hover:border-2 hover:border-gray-200 rounded-lg transition-colors mx-6 my-2">
-                    <button className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0 transition-colors hover:border-amber-400" />
+                    <button 
+                      onClick={() => toggleComplete(reminder.id)}
+                      className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0 transition-colors hover:border-amber-400 flex items-center justify-center"
+                    >
+                      {reminder.is_completed && <HiOutlineCheck size={10} className="text-green-500" />}
+                    </button>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[var(--foreground)] truncate">{reminder.title}</p>
                       {reminder.description && (

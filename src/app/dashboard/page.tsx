@@ -579,7 +579,15 @@ export default function DashboardPage() {
                                         {/* Person avatar */}
                                         <div className="hidden md:flex md:col-span-1 justify-center">
                                           <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white text-[9px] font-bold">
-                                            {userInitials}
+                                            {user?.avatar_url ? (
+                                              <img
+                                                src={user.avatar_url}
+                                                alt={user.full_name}
+                                                className="w-6 h-6 rounded-full object-cover"
+                                              />
+                                            ) : (
+                                              userInitials
+                                            )}
                                           </div>
                                         </div>
 
@@ -773,7 +781,15 @@ export default function DashboardPage() {
                                             )}
                                           </div>
                                           <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ backgroundColor: cfg.dot }}>
-                                            {userInitials}
+                                            {user?.avatar_url ? (
+                                              <img
+                                                src={user.avatar_url}
+                                                alt={user.full_name}
+                                                className="w-5 h-5 rounded-full object-cover"
+                                              />
+                                            ) : (
+                                              userInitials
+                                            )}
                                           </div>
                                         </div>
                                       </div>

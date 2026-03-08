@@ -302,11 +302,24 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
             <div className="space-y-2">
               {currentTask.comments?.map(c => (
                 <div key={c.id} className="p-2 rounded-lg text-sm flex justify-between items-start" style={{ backgroundColor: 'var(--secondary)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    {c.commentUser?.avatar_url ? (
+                      <img src={c.commentUser.avatar_url} alt={c.commentUser.full_name} className="w-6 h-6 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold text-white">
+                        {c.commentUser?.full_name ? c.commentUser.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                      </div>
+                    )}
+                    <span className="text-xs" style={{ color: 'var(--muted)' }}>
+                      {(() => {
+                        const d = new Date(c.created_at);
+                        if (isNaN(d.getTime())) return '—';
+                        return d.toLocaleString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                      })()}
+                    </span>
+                  </div>
                   <div>
                     <p>{c.content}</p>
-                    <span className="text-xs mt-1 block" style={{ color: 'var(--muted)' }}>
-                      {new Date(c.created_at).toLocaleString('es-ES')}
-                    </span>
                   </div>
                   <button
                     onClick={() => taskId && deleteComment(taskId, c.id)}

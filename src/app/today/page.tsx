@@ -257,7 +257,15 @@ export default function TodayPage() {
                           {priority.label}
                         </span>
                         <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-semibold text-gray-500">{userInitials}</span>
+                          {user?.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.full_name}
+                              className="w-7 h-7 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-[10px] font-semibold text-gray-500">{userInitials}</span>
+                          )}
                         </div>
                       </div>
                     );

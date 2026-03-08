@@ -6,6 +6,7 @@ import { HiOutlineUser, HiOutlineMail, HiOutlinePencil, HiOutlineCheck, HiX, HiO
 
 export default function ProfilePage() {
   const { user, updateProfile, isLoading: loading } = useAuthStore();
+    if (user) console.log('user.created_at:', user.created_at);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ full_name: '', avatar_url: '' });
   const [success, setSuccess] = useState(false);
@@ -163,7 +164,13 @@ export default function ProfilePage() {
 
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted)' }}>Miembro desde</label>
-            <p className="text-sm py-2">{new Date(user.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+              <p className="text-sm py-2">
+                {(() => {
+                  const d = new Date(user.created_at);
+                  if (isNaN(d.getTime())) return '—';
+                  return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+                })()}
+              </p>
           </div>
         </div>
 

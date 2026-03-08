@@ -19,6 +19,8 @@ import {
   HiOutlineClipboardList,
   HiOutlineCalendar,
   HiOutlineTrash,
+  HiOutlineUser,
+  HiOutlineCog,
 } from 'react-icons/hi';
 
 const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/auth/callback'];
@@ -28,7 +30,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { sidebarOpen, setMobileSidebarOpen } = useUIStore();
   const { notifications, unreadCount, fetchNotifications, generateNotifications, markAsRead, markAllAsRead, deleteNotification } = useNotificationStore();
   const [bellOpen, setBellOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -51,11 +55,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, isLoading, isPublicPage, router, pathname]);
 
-  // Close bell dropdown on click outside
+  // Close dropdowns on click outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
         setBellOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -233,20 +240,76 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-lg hover:bg-red-50 transition-colors text-gray-400 hover:text-red-500"
-              title="Cerrar sesión"
-            >
-              <HiOutlineLogout size={18} />
-            </button>
-            <div className="hidden sm:flex items-center gap-2 ml-1 pl-2 border-l" style={{ borderColor: 'var(--border)' }}>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                {initials}
-              </div>
-              <span className="text-sm font-medium text-[var(--foreground)]">
-                {user?.full_name?.split(' ')[0]?.toUpperCase()}
-              </span>
+            <div ref={userMenuRef} className="relative hidden sm:flex items-center ml-1 pl-2 border-l" style={{ borderColor: 'var(--border)' }}>
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt={user.full_name} className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                    {initials}
+                  </div>
+                )}
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  {user?.full_name?.split(' ')[0]?.toUpperCase()}
+                </span>
+              </button>
+
+              {userMenuOpen && (
+                <div
+                  className="absolute right-0 top-11 w-60 rounded-xl border shadow-xl z-50 overflow-hidden"
+                  style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+                >
+                  {/* User info */}
+                  <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                    <div className="flex items-center gap-3">
+                      {user?.avatar_url ? (
+                        <img src={user.avatar_url} alt={user.full_name} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                          {initials}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[var(--foreground)] truncate">{user?.full_name}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--muted)' }}>{user?.email}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu items */}
+                  <div className="py-1">
+                    <Link
+                      href="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-[var(--foreground)]"
+                    >
+                      <HiOutlineUser size={15} className="text-gray-500" />
+                      Mi perfil
+                    </Link>
+                    <Link
+                      href="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-[var(--foreground)]"
+                    >
+                      <HiOutlineCog size={15} className="text-gray-500" />
+                      Configuración
+                    </Link>
+                  </div>
+
+                  <div className="border-t" style={{ borderColor: 'var(--border)' }}>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <HiOutlineLogout size={15} />
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>

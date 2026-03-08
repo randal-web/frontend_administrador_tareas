@@ -278,15 +278,21 @@ export default function ProjectsPage() {
                     {/* Footer: avatar + date */}
                     <div className="flex items-center justify-between">
                       <div className="flex -space-x-1.5">
-                        <div
-                          className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9px] font-bold text-white"
-                          style={{
-                            backgroundColor: '#1a1a1a',
-                            borderColor: bgTint,
-                          }}
-                        >
-                          {userInitials}
-                        </div>
+                        {user?.avatar_url ? (
+                          <img
+                            src={user.avatar_url}
+                            alt={user.full_name}
+                            className="w-6 h-6 rounded-full border-2 object-cover"
+                            style={{ borderColor: bgTint }}
+                          />
+                        ) : (
+                          <div
+                            className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9px] font-bold text-white"
+                            style={{ backgroundColor: '#1a1a1a', borderColor: bgTint }}
+                          >
+                            {userInitials}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--muted)' }}>
                         <HiOutlineCalendar size={11} />

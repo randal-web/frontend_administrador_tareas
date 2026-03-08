@@ -8,6 +8,7 @@ import { useTaskStore } from '@/stores/taskStore';
 import { useHabitStore } from '@/stores/habitStore';
 import { useReminderStore } from '@/stores/reminderStore';
 import { useNoteStore } from '@/stores/noteStore';
+import { useAuthStore } from '@/stores/authStore';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import { useState } from 'react';
 import {
@@ -22,6 +23,7 @@ import {
   HiOutlineChevronRight,
   HiOutlineUsers,
   HiOutlineLightningBolt,
+  HiOutlineVideoCamera,
 } from 'react-icons/hi';
 
 const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -60,6 +62,12 @@ export default function TodayPage() {
 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+
+  const { user } = useAuthStore();
+  const userInitials = useMemo(() => {
+    if (!user?.full_name) return '?';
+    return user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  }, [user]);
 
   useEffect(() => {
     fetchTasksByDate(todayStr);
@@ -201,14 +209,13 @@ export default function TodayPage() {
         <div className="lg:col-span-2 space-y-4">
           {/* Today's Tasks */}
           <div className="rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between px-4 py-3 border-none" style={{ borderColor: 'var(--border)' }}>
               <div className="flex items-center gap-2">
                 <HiOutlineClipboardList size={16} className="text-blue-500" />
                 <h2 className="text-sm font-semibold text-[var(--foreground)]">Tareas de hoy</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">{pendingTasks.length}</span>
               </div>
               <Link href="/dashboard" className="text-xs font-medium hover:underline" style={{ color: 'var(--primary)' }}>
-                Ver todas <HiOutlineChevronRight size={12} className="inline" />
+                Ver todas
               </Link>
             </div>
             <div>
@@ -223,8 +230,7 @@ export default function TodayPage() {
                     return (
                       <div
                         key={task.id}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50/70 transition-colors cursor-pointer border-b"
-                        style={{ borderColor: 'var(--border)' }}
+                        className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 hover:border-solid hover:border-2 hover:border-gray-200 rounded-lg transition-colors cursor-pointer mx-6 my-2"
                         onClick={() => handleTaskClick(task.id)}
                       >
                         <button
@@ -233,17 +239,15 @@ export default function TodayPage() {
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[var(--foreground)] truncate">{task.title}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex items-center gap-1 mt-0.5">
                             {task.project?.name && (
-                              <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: 'var(--muted)' }}>
-                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: task.project.color_hex || '#6b7280' }} />
+                              <span className="text-[11px]" style={{ color: 'var(--muted)' }}>
                                 {task.project.name}
                               </span>
                             )}
-                            {task.start_date && task.end_date && (
-                              <span className="text-[10px]" style={{ color: 'var(--muted)' }}>
-                                <HiOutlineClock size={10} className="inline mr-0.5" />
-                                {task.start_date.split('-').reverse().join('/')} → {task.end_date.split('-').reverse().join('/')}
+                            {task.end_date && (
+                              <span className="text-[11px]" style={{ color: 'var(--muted)' }}>
+                                · {task.end_date.split('-').reverse().join('/')}
                               </span>
                             )}
                           </div>
@@ -252,6 +256,17 @@ export default function TodayPage() {
                           style={{ color: priority.color, backgroundColor: priority.bg }}>
                           {priority.label}
                         </span>
+                        <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          {user?.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.full_name}
+                              className="w-7 h-7 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-[10px] font-semibold text-gray-500">{userInitials}</span>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -289,14 +304,13 @@ export default function TodayPage() {
 
           {/* Meetings */}
           <div className="rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
-                <HiOutlineUsers size={16} className="text-purple-500" />
+                <HiOutlineVideoCamera size={16} className="text-purple-500" />
                 <h2 className="text-sm font-semibold text-[var(--foreground)]">Reuniones de hoy</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium">{todayMeetings.length}</span>
               </div>
               <Link href="/reminders" className="text-xs font-medium hover:underline" style={{ color: 'var(--primary)' }}>
-                Ver pendientes <HiOutlineChevronRight size={12} className="inline" />
+                Ver todas
               </Link>
             </div>
             <div>
@@ -306,33 +320,28 @@ export default function TodayPage() {
                 </div>
               ) : (
                 todayMeetings.map(meeting => (
-                  <div key={meeting.id} className="flex items-center gap-3 px-4 py-2.5 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
-                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                      <HiOutlineUsers size={14} className="text-purple-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--foreground)] truncate">{meeting.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {meeting.due_time && (
-                          <span className="text-[11px] font-medium flex items-center gap-1" style={{ color: 'var(--muted)' }}>
-                            <HiOutlineClock size={10} />
-                            {meeting.due_time.slice(0, 5)}
-                          </span>
-                        )}
-                        {meeting.project_name && (
-                          <span className="text-[11px]" style={{ color: 'var(--muted)' }}>{meeting.project_name}</span>
-                        )}
+                  <div key={meeting.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 rounded-lg transition-colors mx-6 my-2">
+                    {meeting.due_time ? (
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex flex-col items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-white leading-none">{meeting.due_time.slice(0, 2)}</span>
+                        <span className="text-[10px] font-medium text-white/80 leading-none mt-0.5">{meeting.due_time.slice(3, 5)}</span>
                       </div>
-                    </div>
-                    {meeting.priority && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-md flex-shrink-0"
-                        style={{
-                          color: reminderPriorityColors[meeting.priority]?.color,
-                          backgroundColor: reminderPriorityColors[meeting.priority]?.bg,
-                        }}>
-                        {meeting.priority === 'high' ? 'Alta' : meeting.priority === 'medium' ? 'Media' : 'Baja'}
-                      </span>
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                        <HiOutlineVideoCamera size={18} className="text-white" />
+                      </div>
                     )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[var(--foreground)] truncate">{meeting.title}</p>
+                      {(meeting.description || meeting.project_name) && (
+                        <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--muted)' }}>
+                          {meeting.description || meeting.project_name}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 flex-shrink-0">
+                      Reunión
+                    </span>
                   </div>
                 ))
               )}
@@ -341,14 +350,13 @@ export default function TodayPage() {
 
           {/* Today's Reminders */}
           <div className="rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
                 <HiOutlineExclamationCircle size={16} className="text-amber-500" />
                 <h2 className="text-sm font-semibold text-[var(--foreground)]">Pendientes de hoy</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">{todayReminders.length}</span>
               </div>
               <Link href="/reminders" className="text-xs font-medium hover:underline" style={{ color: 'var(--primary)' }}>
-                Ver todos <HiOutlineChevronRight size={12} className="inline" />
+                Ver todos
               </Link>
             </div>
             <div>
@@ -357,41 +365,24 @@ export default function TodayPage() {
                   <p className="text-sm" style={{ color: 'var(--muted)' }}>No hay pendientes para hoy</p>
                 </div>
               ) : (
-                todayReminders.map(reminder => {
-                  const typeIcons: Record<string, string> = {
-                    reminder: '🔔',
-                    event: '📅',
-                    review: '📋',
-                  };
-                  return (
-                    <div key={reminder.id} className="flex items-center gap-3 px-4 py-2.5 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
-                      <span className="text-base flex-shrink-0">{typeIcons[reminder.type] || '🔔'}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[var(--foreground)] truncate">{reminder.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {reminder.due_time && (
-                            <span className="text-[11px] flex items-center gap-1" style={{ color: 'var(--muted)' }}>
-                              <HiOutlineClock size={10} />
-                              {reminder.due_time.slice(0, 5)}
-                            </span>
-                          )}
-                          {reminder.description && (
-                            <span className="text-[11px] truncate" style={{ color: 'var(--muted)' }}>{reminder.description}</span>
-                          )}
-                        </div>
-                      </div>
-                      {reminder.priority && (
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-md flex-shrink-0"
-                          style={{
-                            color: reminderPriorityColors[reminder.priority]?.color,
-                            backgroundColor: reminderPriorityColors[reminder.priority]?.bg,
-                          }}>
-                          {reminder.priority === 'high' ? 'Alta' : reminder.priority === 'medium' ? 'Media' : 'Baja'}
-                        </span>
+                todayReminders.map(reminder => (
+                  <div key={reminder.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 hover:border-solid hover:border-2 hover:border-gray-200 rounded-lg transition-colors mx-6 my-2">
+                    <button className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0 transition-colors hover:border-amber-400" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[var(--foreground)] truncate">{reminder.title}</p>
+                      {reminder.description && (
+                        <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{reminder.description}</p>
                       )}
                     </div>
-                  );
-                })
+                    {reminder.priority && (
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: reminderPriorityColors[reminder.priority]?.bg }}>
+                        <HiOutlineExclamationCircle size={16}
+                          style={{ color: reminderPriorityColors[reminder.priority]?.color }} />
+                      </div>
+                    )}
+                  </div>
+                ))
               )}
             </div>
           </div>
@@ -401,13 +392,13 @@ export default function TodayPage() {
         <div className="space-y-4">
           {/* Habits */}
           <div className="rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
                 <HiOutlineRefresh size={16} className="text-green-500" />
                 <h2 className="text-sm font-semibold text-[var(--foreground)]">Hábitos de hoy</h2>
               </div>
               <Link href="/habits" className="text-xs font-medium hover:underline" style={{ color: 'var(--primary)' }}>
-                Ver todos <HiOutlineChevronRight size={12} className="inline" />
+                Ver todos
               </Link>
             </div>
             <div className="p-3">
@@ -416,49 +407,56 @@ export default function TodayPage() {
                   <p className="text-sm" style={{ color: 'var(--muted)' }}>No hay hábitos configurados</p>
                 </div>
               ) : (
-                <div className="space-y-1">
-                  {todaysHabits.map(habit => (
-                    <div
-                      key={habit.id}
-                      className={`flex items-center justify-between p-2 rounded-lg transition-colors ${habit.todayCompleted ? 'bg-green-50' : 'hover:bg-gray-50'}`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <button
-                          onClick={() => toggleLog(habit.id, todayStr)}
-                          className={`w-4.5 h-4.5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            habit.todayCompleted
-                              ? 'bg-green-500 border-green-500'
+                <>
+                  <div className="space-y-2">
+                    {todaysHabits.map(habit => (
+                      <div
+                        key={habit.id}
+                        className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${habit.todayCompleted ? 'bg-green-50 border-1 border-green-300 border-solid' : 'hover:bg-gray-50'}`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <button
+                            onClick={() => toggleLog(habit.id, todayStr)}
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${habit.todayCompleted
+                              ? 'bg-green-500 border-green-500 '
                               : 'border-gray-300 hover:border-green-400'
-                          }`}
-                        >
-                          {habit.todayCompleted && <HiOutlineCheck size={10} className="text-white" />}
-                        </button>
-                        <span className={`text-sm truncate ${habit.todayCompleted ? 'text-gray-400 line-through' : 'text-[var(--foreground)]'}`}>
-                          {habit.name}
+                              }`}
+                          >
+                            {habit.todayCompleted && <HiOutlineCheck size={10} className="text-white" />}
+                          </button>
+                          <span className="text-sm text-[var(--foreground)]">
+                            {habit.name}
+                          </span>
+                        </div>
+                        <span className="text-xs font-medium flex items-center gap-1 flex-shrink-0 ml-2 text-orange-500">
+                          🔥 {habit.week?.filter(d => d.is_completed).length || 0}
                         </span>
                       </div>
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full border border-gray-200 flex-shrink-0 ml-2" style={{ color: 'var(--muted)' }}>
-                        {habit.week?.filter(d => d.is_completed).length || 0}/7
-                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm" style={{ color: 'var(--muted)' }}>Completados</span>
+                      <span className="text-sm font-bold text-[var(--foreground)]">{habitsCompleted} de {todaysHabits.length}</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="w-full h-1.5 rounded-full bg-gray-100">
+                      <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${todaysHabits.length > 0 ? Math.round((habitsCompleted / todaysHabits.length) * 100) : 0}%` }} />
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
 
           {/* Important Notes */}
           <div className="rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
                 <HiOutlineStar size={16} className="text-amber-400" />
                 <h2 className="text-sm font-semibold text-[var(--foreground)]">Notas importantes</h2>
-                {importantNotes.length > 0 && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">{importantNotes.length}</span>
-                )}
               </div>
               <Link href="/notes" className="text-xs font-medium hover:underline" style={{ color: 'var(--primary)' }}>
-                Ver notas <HiOutlineChevronRight size={12} className="inline" />
+                Ver todas
               </Link>
             </div>
             <div className="p-3">
@@ -471,40 +469,40 @@ export default function TodayPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {importantNotes.slice(0, 5).map(note => {
                     const colors = noteColorMap[note.color] || noteColorMap.yellow;
                     return (
                       <div
                         key={note.id}
-                        className="rounded-lg p-2.5 border-l-3 transition-colors"
-                        style={{
-                          backgroundColor: colors.bg,
-                          borderLeftColor: colors.border,
-                          borderLeftWidth: '3px',
-                        }}
+                        className="rounded-xl p-3.5 relative"
+                        style={{ backgroundColor: colors.bg, borderLeft: `3px solid ${colors.border}` }}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <HiOutlineStar size={12} className="text-amber-400 flex-shrink-0 fill-amber-400" />
-                              <p className="text-sm font-semibold truncate" style={{ color: colors.text }}>{note.title}</p>
-                            </div>
-                            {note.content && (
-                              <div
-                                className="text-[11px] mt-1 line-clamp-2 opacity-75"
-                                style={{ color: colors.text }}
-                                dangerouslySetInnerHTML={{ __html: note.content }}
-                              />
-                            )}
-                          </div>
-                          <button
-                            onClick={() => toggleImportant(note.id)}
-                            className="p-0.5 rounded hover:bg-white/40 transition-colors flex-shrink-0"
-                            title="Quitar de importantes"
-                          >
-                            <HiOutlineStar size={14} className="text-amber-400 fill-amber-400" />
-                          </button>
+                        <button
+                          onClick={() => toggleImportant(note.id)}
+                          className="absolute top-3 right-3 p-0.5 rounded hover:bg-white/40 transition-colors"
+                          title="Quitar de importantes"
+                        >
+                          <HiOutlineStar size={14} className="text-amber-400 fill-amber-400" />
+                        </button>
+                        <p className="text-sm font-semibold pr-6" style={{ color: colors.text }}>{note.title}</p>
+                        {note.content && (
+                          <div
+                            className="text-xs mt-1.5 line-clamp-2 opacity-70"
+                            style={{ color: colors.text }}
+                            dangerouslySetInnerHTML={{ __html: note.content }}
+                          />
+                        )}
+                        <div className="flex items-center gap-1 mt-2.5">
+                          <HiOutlineClock size={11} style={{ color: colors.text, opacity: 0.5 }} />
+                          <span className="text-[11px]" style={{ color: colors.text, opacity: 0.6 }}>
+                            {(() => {
+                              const dateStr = note.created_at || note.createdAt;
+                              if (!dateStr) return '';
+                              const d = new Date(dateStr);
+                              return isNaN(d.getTime()) ? '' : format(d, 'dd/MM/yy');
+                            })()}
+                          </span>
                         </div>
                       </div>
                     );

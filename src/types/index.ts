@@ -40,12 +40,16 @@ export interface Task {
   status: TaskStatus;
   start_date: string | null;
   end_date: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
   category: TaskCategory;
   subtasks?: Subtask[];
   comments?: TaskComment[];
   project?: { id: string; name: string; color_hex: string } | null;
   created_at: string;
   updated_at: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Subtask {
@@ -61,6 +65,11 @@ export interface TaskComment {
   user_id: string;
   content: string;
   created_at: string;
+  createdAt?: string;
+  commentUser?: {
+    full_name: string;
+    avatar_url: string | null;
+  };
 }
 
 // Project

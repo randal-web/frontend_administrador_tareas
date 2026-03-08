@@ -176,7 +176,7 @@ export default function NotesPage() {
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
             <div className="absolute inset-0 bg-black/40" onClick={() => setViewNote(null)} />
-            <div className="relative w-full max-w-lg rounded-xl border shadow-2xl overflow-hidden" style={{ backgroundColor: cfg.bg, borderColor: cfg.border }}>
+            <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border shadow-2xl overflow-hidden" style={{ backgroundColor: cfg.bg, borderColor: cfg.border }}>
               {/* Header */}
               <div className="flex items-center justify-between p-5 pb-0">
                 <div className="flex items-center gap-2">
@@ -216,17 +216,19 @@ export default function NotesPage() {
               </div>
 
               {/* Content */}
-              <div className="p-5">
-                <h2 className="text-lg font-bold text-gray-900 mb-3">{viewNote.title}</h2>
+              <div className="flex-1 overflow-y-auto p-5 pt-0 custom-scrollbar">
+                <div className="sticky top-0 py-4 mb-2 z-10" style={{ backgroundColor: cfg.bg }}>
+                  <h2 className="text-lg font-bold text-gray-900">{viewNote.title}</h2>
+                </div>
                 {viewNote.content ? (
-                  <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: viewNote.content }} />
+                  <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 pb-4" dangerouslySetInnerHTML={{ __html: viewNote.content }} />
                 ) : (
                   <p className="text-sm italic" style={{ color: 'var(--muted)' }}>Sin contenido</p>
                 )}
               </div>
 
               {/* Footer */}
-              <div className="px-5 pb-4 flex items-center gap-1.5 text-gray-400">
+              <div className="px-5 py-4 flex items-center gap-1.5 text-gray-400 border-t border-black/5 flex-shrink-0">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />

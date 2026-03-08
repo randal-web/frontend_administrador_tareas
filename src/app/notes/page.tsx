@@ -145,7 +145,7 @@ export default function NotesPage() {
                 <BsPinAngleFill size={13} className="text-gray-400" />
                 <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Fijadas</h2>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {pinnedNotes.map(note => (
                   <NoteCard key={note.id} note={note} onClick={openView} onEdit={openEdit} onDelete={handleDelete} onTogglePin={togglePin} onToggleImportant={toggleImportant} />
                 ))}
@@ -160,7 +160,7 @@ export default function NotesPage() {
                 <HiOutlineDocumentText size={14} className="text-gray-400" />
                 <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Otras notas</h2>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {otherNotes.map(note => (
                   <NoteCard key={note.id} note={note} onClick={openView} onEdit={openEdit} onDelete={handleDelete} onTogglePin={togglePin} onToggleImportant={toggleImportant} />
                 ))}

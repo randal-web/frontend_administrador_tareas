@@ -83,45 +83,48 @@ export default function SearchModal() {
   if (!isSearchOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center sm:pt-[10vh] px-0 sm:px-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSearchOpen(false)} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSearchOpen(false)} />
 
       {/* Modal content */}
       <div 
-        className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
+        className="relative w-full max-w-2xl h-full sm:h-auto bg-white sm:rounded-2xl shadow-2xl border-x sm:border border-gray-100 overflow-hidden flex flex-col"
         onKeyDown={handleKeyDown}
       >
         {/* Input area */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-50 bg-gray-50/30">
-          <HiOutlineSearch size={20} className="text-gray-400" />
+        <div className="flex items-center gap-3 px-4 py-3 sm:py-4 border-b border-gray-100 bg-gray-50/50">
+          <HiOutlineSearch size={22} className="text-gray-400" />
           <input
             ref={inputRef}
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar en todo el sistema..."
-            className="flex-1 bg-transparent border-none outline-none text-base placeholder-gray-400 text-gray-800"
+            placeholder="¿Qué estás buscando?"
+            className="flex-1 bg-transparent border-none outline-none text-base sm:text-lg placeholder-gray-400 text-gray-800"
           />
-          <div className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 rounded border border-gray-200 text-[10px] text-gray-400 bg-white whitespace-nowrap">
+          <div className="flex items-center gap-2">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded border border-gray-200 text-[10px] text-gray-400 bg-white whitespace-nowrap">
               {isMac ? '⌘K' : 'Ctrl+K'}
             </kbd>
-            <button onClick={() => setIsSearchOpen(false)} className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors">
-              <HiOutlineX size={18} />
+            <button onClick={() => setIsSearchOpen(false)} className="p-2 hover:bg-gray-100 rounded-xl text-gray-500 transition-colors">
+              <HiOutlineX size={20} />
             </button>
           </div>
         </div>
 
         {/* Results area */}
-        <div className="max-h-[60vh] overflow-y-auto p-2" ref={scrollRef}>
+        <div className="flex-1 sm:max-h-[60vh] overflow-y-auto p-2 sm:p-3 bg-white" ref={scrollRef}>
           {!searchTerm || searchTerm.length < 2 ? (
-            <div className="py-12 text-center">
-              <p className="text-sm text-gray-400">Escribe al menos 2 caracteres para buscar...</p>
+            <div className="py-20 text-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                <HiOutlineSearch size={32} />
+              </div>
+              <p className="text-sm font-medium text-gray-400">Escribe para buscar tareas, notas...</p>
             </div>
           ) : results.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-sm text-gray-400">No se encontraron resultados para "{searchTerm}"</p>
+            <div className="py-20 text-center">
+              <p className="text-sm text-gray-400 font-medium">No hay resultados para "{searchTerm}"</p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -133,26 +136,28 @@ export default function SearchModal() {
                     key={`${result.type}-${result.id}`}
                     onClick={() => handleSelect(result)}
                     onMouseEnter={() => setSelectedIndex(index)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
-                      isSelected ? 'bg-indigo-50 shadow-sm' : 'hover:bg-gray-50'
+                    className={`w-full flex items-center gap-4 px-3 py-3.5 rounded-xl text-left transition-all ${
+                      isSelected ? 'bg-indigo-50/80 shadow-sm ring-1 ring-indigo-100' : 'hover:bg-gray-50'
                     }`}
                   >
                     <div 
-                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
                       style={{ backgroundColor: `${result.color}15`, color: result.color }}
                     >
-                      <Icon size={18} />
+                      <Icon size={20} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-semibold truncate ${isSelected ? 'text-indigo-900' : 'text-gray-700'}`}>
+                      <p className={`text-[15px] font-bold truncate ${isSelected ? 'text-indigo-900' : 'text-gray-700'}`}>
                         {result.title}
                       </p>
-                      <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">
-                        {result.type === 'task' ? 'Tarea' : result.type === 'note' ? 'Nota' : result.type === 'habit' ? 'Hábito' : result.type === 'reminder' ? 'Pendiente' : 'Proyecto'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+                          {result.type === 'task' ? 'Tarea' : result.type === 'note' ? 'Nota' : result.type === 'habit' ? 'Hábito' : result.type === 'reminder' ? 'Pendiente' : 'Proyecto'}
+                        </span>
+                      </div>
                     </div>
                     {isSelected && (
-                      <span className="text-[10px] font-bold text-indigo-400 animate-pulse">ENTER</span>
+                      <span className="hidden sm:inline-block text-[10px] font-black text-indigo-400">ENTER</span>
                     )}
                   </button>
                 );
@@ -162,17 +167,18 @@ export default function SearchModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between text-[10px] text-gray-400 font-medium">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1"><kbd className="px-1 rounded border bg-white">↑↓</kbd> Navegar</span>
-            <span className="flex items-center gap-1"><kbd className="px-1 rounded border bg-white">↵</kbd> Abrir</span>
-            <span className="hidden sm:flex items-center gap-1 ml-2">
-              <kbd className="px-1 rounded border bg-white">{isMac ? '⌘K' : 'Ctrl+K'}</kbd> para buscar
+        <div className="hidden sm:flex px-5 py-3 bg-gray-50 border-t border-gray-100 items-center justify-between text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded border bg-white shadow-sm">↑↓</kbd> Navegar</span>
+            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded border bg-white shadow-sm">↵</kbd> Abrir</span>
+            <span className="flex items-center gap-1.5 ml-4">
+              <kbd className="px-1.5 py-0.5 rounded border bg-white shadow-sm">{isMac ? '⌘K' : 'Ctrl+K'}</kbd> para buscar
             </span>
           </div>
-          <span>Búsqueda Global</span>
+          <span className="text-indigo-500">Búsqueda Global</span>
         </div>
       </div>
     </div>
+  );
   );
 }

@@ -102,39 +102,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
         >
           {/* Left: hamburger (mobile) + greeting */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors md:hidden"
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors md:hidden flex-shrink-0"
             >
               <HiOutlineMenu size={20} />
             </button>
-            <h2 className="text-base font-bold text-[var(--foreground)]">
-              Bienvenido <span className="uppercase">{user?.full_name?.split(' ')[0] || 'Usuario'}</span>
+            <h2 className="text-sm sm:text-base font-bold text-[var(--foreground)] truncate">
+              <span className="hidden xs:inline">Bienvenido </span>
+              <span className="uppercase">{user?.full_name?.split(' ')[0] || 'Usuario'}</span>
             </h2>
           </div>
 
           {/* Right: search, user */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button 
               onClick={() => setIsSearchOpen(true)}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+              title="Buscar (⌘K)"
             >
               <HiOutlineSearch size={18} />
             </button>
-            <div ref={userMenuRef} className="relative hidden sm:flex items-center ml-1 pl-2 border-l" style={{ borderColor: 'var(--border)' }}>
+            <div ref={userMenuRef} className="relative flex items-center ml-1 sm:pl-2 sm:border-l" style={{ borderColor: 'var(--border)' }}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 {user?.avatar_url ? (
-                  <img src={user.avatar_url} alt={user.full_name} className="w-8 h-8 rounded-full object-cover" />
+                  <img src={user.avatar_url} alt={user.full_name} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] sm:text-xs font-bold">
                     {initials}
                   </div>
                 )}
-                <span className="text-sm font-medium text-[var(--foreground)]">
+                <span className="text-xs sm:text-sm font-medium text-[var(--foreground)] hidden xxs:inline">
                   {user?.full_name?.split(' ')[0]?.toUpperCase()}
                 </span>
               </button>

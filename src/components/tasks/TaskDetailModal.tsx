@@ -318,9 +318,9 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
                       </span>
                       <span className="text-[10px] opacity-70" style={{ color: 'var(--muted)' }}>
                         {(() => {
-                          const rawDate = c.created_at || c.createdAt || '';
-                          const dateValue = typeof rawDate === 'string' ? rawDate : (rawDate?.toString() || '');
-                          const d = new Date(dateValue);
+                          const rawDate = c.created_at || c.createdAt;
+                          if (!rawDate) return '—';
+                          const d = new Date(rawDate);
                           if (isNaN(d.getTime())) return '—';
                           return d.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
                         })()}

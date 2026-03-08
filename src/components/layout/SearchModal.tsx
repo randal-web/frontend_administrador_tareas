@@ -31,6 +31,7 @@ export default function SearchModal() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isMac = typeof window !== 'undefined' && (navigator.platform.toUpperCase().indexOf('MAC') >= 0 || navigator.userAgent.toUpperCase().indexOf('MAC') >= 0);
 
   useEffect(() => {
     if (isSearchOpen) {
@@ -98,7 +99,9 @@ export default function SearchModal() {
             className="flex-1 bg-transparent border-none outline-none text-base placeholder-gray-400 text-gray-800"
           />
           <div className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 rounded border border-gray-200 text-[10px] text-gray-400 bg-white">ESC</kbd>
+            <kbd className="px-1.5 py-0.5 rounded border border-gray-200 text-[10px] text-gray-400 bg-white whitespace-nowrap">
+              {isMac ? '⌘K' : 'Ctrl+K'}
+            </kbd>
             <button onClick={() => setIsSearchOpen(false)} className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors">
               <HiOutlineX size={18} />
             </button>
@@ -158,6 +161,9 @@ export default function SearchModal() {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1"><kbd className="px-1 rounded border bg-white">↑↓</kbd> Navegar</span>
             <span className="flex items-center gap-1"><kbd className="px-1 rounded border bg-white">↵</kbd> Abrir</span>
+            <span className="hidden sm:flex items-center gap-1 ml-2">
+              <kbd className="px-1 rounded border bg-white">{isMac ? '⌘K' : 'Ctrl+K'}</kbd> para buscar
+            </span>
           </div>
           <span>Búsqueda Global</span>
         </div>

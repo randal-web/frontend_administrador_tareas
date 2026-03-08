@@ -31,6 +31,7 @@ export default function Sidebar() {
   const { habits } = useHabitStore();
   const { reminders } = useReminderStore();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const isMac = typeof window !== 'undefined' && (navigator.platform.toUpperCase().indexOf('MAC') >= 0 || navigator.userAgent.toUpperCase().indexOf('MAC') >= 0);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -132,7 +133,9 @@ export default function Sidebar() {
                 className="flex-1 bg-transparent border-none outline-none text-[var(--foreground)] placeholder-gray-400 w-full"
               />
               {!searchTerm && (
-                <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-gray-200 text-gray-400 bg-gray-50">⌘K</kbd>
+                <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-gray-200 text-gray-400 bg-gray-50 whitespace-nowrap">
+                  {isMac ? '⌘K' : 'Ctrl + K'}
+                </kbd>
               )}
               {searchTerm && (
                 <button

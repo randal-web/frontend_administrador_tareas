@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useReminderStore } from '@/stores/reminderStore';
 import { Reminder, ReminderType, ReminderPriority } from '@/types';
+import { getLocalDateString } from '@/lib/dateUtils';
 import {
   HiOutlineFilter,
   HiOutlinePlus,
@@ -54,7 +55,7 @@ export default function RemindersPage() {
     description: '',
     type: 'reminder' as ReminderType,
     priority: 'medium' as ReminderPriority,
-    due_date: new Date().toISOString().split('T')[0],
+    due_date: getLocalDateString(),
     due_time: '',
     project_name: '',
   });
@@ -74,11 +75,11 @@ export default function RemindersPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const tomorrow = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    return getLocalDateString(d);
   })();
 
   const todayReminders = useMemo(() => reminders.filter(r => r.due_date === today), [reminders, today]);

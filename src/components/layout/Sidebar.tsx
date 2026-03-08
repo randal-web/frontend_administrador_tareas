@@ -9,7 +9,6 @@ import { useProjectStore } from '@/stores/projectStore';
 import { useHabitStore } from '@/stores/habitStore';
 import { useNoteStore } from '@/stores/noteStore';
 import { useReminderStore } from '@/stores/reminderStore';
-import { useNotificationStore } from '@/stores/notificationStore';
 import {
   HiOutlineViewGrid,
   HiOutlineCalendar,
@@ -17,7 +16,6 @@ import {
   HiOutlineRefresh,
   HiOutlineDocumentText,
   HiOutlineExclamationCircle,
-  HiOutlineBell,
   HiOutlineCog,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
@@ -31,14 +29,7 @@ export default function Sidebar() {
   const { user } = useAuthStore();
   const { projects } = useProjectStore();
   const { habits } = useHabitStore();
-  const { notes } = useNoteStore();
   const { reminders } = useReminderStore();
-  const { unreadCount, fetchUnreadCount, generateNotifications } = useNotificationStore();
-
-  useEffect(() => {
-    generateNotifications();
-    fetchUnreadCount();
-  }, [generateNotifications, fetchUnreadCount]);
 
   const handleNavClick = () => {
     if (mobileSidebarOpen) setMobileSidebarOpen(false);
@@ -185,22 +176,6 @@ export default function Sidebar() {
                   <span className="flex-1">Pendientes</span>
                   {reminders.length > 0 && (
                     <span className={badgeClass('/reminders')}>{reminders.length}</span>
-                  )}
-                </>
-              )}
-            </Link>
-            <Link href="/notifications" onClick={handleNavClick} className={navLinkClass('/notifications')} style={navLinkStyle('/notifications')} title={!sidebarOpen ? 'Notificaciones' : undefined}>
-              <div className="relative">
-                <HiOutlineBell size={16} />
-                {unreadCount > 0 && !sidebarOpen && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" />
-                )}
-              </div>
-              {sidebarOpen && (
-                <>
-                  <span className="flex-1">Notificaciones</span>
-                  {unreadCount > 0 && (
-                    <span className="text-[11px] font-medium min-w-[20px] text-center px-1.5 py-0.5 rounded-full bg-red-500 text-white">{unreadCount}</span>
                   )}
                 </>
               )}

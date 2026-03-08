@@ -2,18 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { HiOutlineUser, HiOutlineMail, HiOutlinePencil, HiOutlineCheck, HiX, HiOutlineCamera } from 'react-icons/hi';
+import { HiOutlineUser, HiOutlineMail, HiOutlinePencil, HiOutlineCheck, HiX, HiOutlineCamera, HiOutlineScissors } from 'react-icons/hi';
+import ImageCropper from '@/components/ui/ImageCropper';
 
 export default function ProfilePage() {
   const { user, updateProfile, isLoading: loading } = useAuthStore();
-    if (user) console.log('user.created_at:', user.created_at);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ full_name: '', avatar_url: '' });
   const [success, setSuccess] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
   useEffect(() => {
     if (user) {
@@ -22,46 +23,47 @@ export default function ProfilePage() {
   }, [user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file || !cloudName || !uploadPreset) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      // Redimensionar y convertir a base64
-      const img = new Image();
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        img.src = ev.target?.result as string;
-        img.onload = async () => {
-          const MAX = 256;
-          const scale = Math.min(MAX / img.width, MAX / img.height, 1);
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
-          canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const base64 = canvas.toDataURL('image/jpeg', 0.85);
-          setPreview(base64);
-          setEditing(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setImageToCrop(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
-          // Subir a Cloudinary
-          const formData = new FormData();
-          formData.append('file', base64);
-          formData.append('upload_preset', uploadPreset);
-          try {
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-              method: 'POST',
-              body: formData,
-            });
-            const data = await res.json();
-            if (data.secure_url) {
-              setPreview(data.secure_url);
-              setForm(prev => ({ ...prev, avatar_url: data.secure_url }));
-            }
-          } catch (err) {
-            // Error de subida
-          }
-        };
-      };
-      reader.readAsDataURL(file);
-      e.target.value = '';
+  const handleEditCurrentPhoto = () => {
+    if (form.avatar_url) {
+      setImageToCrop(form.avatar_url);
+    }
+  };
+
+  const handleCropComplete = async (croppedImage: string) => {
+    setImageToCrop(null);
+    setPreview(croppedImage);
+    setEditing(true);
+
+    if (!cloudName || !uploadPreset) return;
+
+    // Subir a Cloudinary
+    const formData = new FormData();
+    formData.append('file', croppedImage);
+    formData.append('upload_preset', uploadPreset);
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.secure_url) {
+        setPreview(data.secure_url);
+        setForm(prev => ({ ...prev, avatar_url: data.secure_url }));
+      }
+    } catch (err) {
+      console.error('Error uploading image:', err);
+    }
   };
 
   const handleSave = async () => {
@@ -92,25 +94,44 @@ export default function ProfilePage() {
       )}
 
       <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
-        {/* Avatar */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative w-20 h-20">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white overflow-hidden" style={{ backgroundColor: 'var(--primary)' }}>
+        {/* Avatar and Info */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-6">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0">
+            <div className="w-full h-full rounded-full flex items-center justify-center text-4xl font-bold text-white overflow-hidden shadow-md" style={{ backgroundColor: 'var(--primary)' }}>
               {(preview || form.avatar_url) ? (
                 <img src={preview || form.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
               ) : (
                 user.full_name.charAt(0).toUpperCase()
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-md transition-opacity hover:opacity-90"
-              style={{ backgroundColor: 'var(--primary)' }}
-              title="Cambiar foto"
-            >
-              <HiOutlineCamera size={14} />
-            </button>
+          </div>
+          
+          <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left">
+            <h2 className="text-2xl font-bold mb-1">{user.full_name}</h2>
+            <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>{user.email}</p>
+            
+            <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors hover:bg-gray-50"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                <HiOutlineCamera size={16} /> Subir nueva foto
+              </button>
+              
+              {form.avatar_url && (
+                <button
+                  type="button"
+                  onClick={handleEditCurrentPhoto}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors hover:bg-gray-50"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <HiOutlineScissors size={16} /> Ajustar encuadre
+                </button>
+              )}
+            </div>
+
             <input
               ref={fileInputRef}
               type="file"
@@ -118,15 +139,6 @@ export default function ProfilePage() {
               onChange={handleFileChange}
               className="hidden"
             />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold">{user.full_name}</h2>
-            <p className="text-sm" style={{ color: 'var(--muted)' }}>{user.email}</p>
-            {user.provider !== 'local' && (
-              <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600 capitalize">
-                {user.provider}
-              </span>
-            )}
           </div>
         </div>
 
@@ -177,12 +189,12 @@ export default function ProfilePage() {
         <hr className="my-4" style={{ borderColor: 'var(--border)' }} />
 
         {/* Actions */}
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col sm:flex-row justify-end gap-2 mt-2">
           {editing ? (
             <>
               <button
                 onClick={handleCancel}
-                className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm border"
+                className="w-full sm:w-auto flex items-center justify-center gap-1 px-4 py-2 rounded-lg text-sm border transition-colors hover:bg-gray-50"
                 style={{ borderColor: 'var(--border)' }}
               >
                 <HiX size={14} /> Cancelar
@@ -190,16 +202,16 @@ export default function ProfilePage() {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm text-white font-medium disabled:opacity-50"
+                className="w-full sm:w-auto flex items-center justify-center gap-1 px-4 py-2 rounded-lg text-sm text-white font-medium disabled:opacity-50 shadow-sm"
                 style={{ backgroundColor: 'var(--primary)' }}
               >
-                <HiOutlineCheck size={14} /> Guardar
+                <HiOutlineCheck size={14} /> Guardar cambios
               </button>
             </>
           ) : (
             <button
               onClick={() => setEditing(true)}
-              className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm text-white font-medium"
+              className="w-full sm:w-auto flex items-center justify-center gap-1 px-4 py-2 rounded-lg text-sm text-white font-medium shadow-sm"
               style={{ backgroundColor: 'var(--primary)' }}
             >
               <HiOutlinePencil size={14} /> Editar perfil
@@ -207,6 +219,14 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {imageToCrop && (
+        <ImageCropper
+          image={imageToCrop}
+          onCropComplete={handleCropComplete}
+          onCancel={() => setImageToCrop(null)}
+        />
+      )}
     </div>
   );
 }

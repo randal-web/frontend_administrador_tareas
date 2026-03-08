@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
 import { Task, TaskPriority, TaskCategory } from '@/types';
@@ -202,11 +202,11 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
               </div>
               <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
                 <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Inicio</span>
-                <span className="text-sm font-medium">{currentTask.start_date || '—'}</span>
+                <span className="text-sm font-medium">{currentTask.start_date || currentTask.startDate || '—'}</span>
               </div>
               <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--secondary)' }}>
                 <span className="text-xs block mb-1" style={{ color: 'var(--muted)' }}>Fin</span>
-                <span className="text-sm font-medium">{currentTask.end_date || '—'}</span>
+                <span className="text-sm font-medium">{currentTask.end_date || currentTask.endDate || '—'}</span>
               </div>
             </div>
           )}
@@ -255,7 +255,7 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
             </h3>
             <div className="space-y-1">
               {currentTask.subtasks?.map(st => (
-                <div key={st.id} className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-gray-50">
+                <div key={st.id} className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-gray-50 group">
                   <button
                     onClick={() => taskId && toggleSubtask(taskId, st.id)}
                     className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
@@ -269,7 +269,7 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
                   </span>
                   <button
                     onClick={() => taskId && deleteSubtask(taskId, st.id)}
-                    className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"
+                    className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <HiOutlineTrash size={14} />
                   </button>
@@ -299,38 +299,45 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
           {/* Comments */}
           <div>
             <h3 className="text-sm font-medium mb-2" style={{ color: 'var(--muted)' }}>Comentarios</h3>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {currentTask.comments?.map(c => (
-                <div key={c.id} className="p-2 rounded-lg text-sm flex justify-between items-start" style={{ backgroundColor: 'var(--secondary)' }}>
-                  <div className="flex items-center gap-2 mb-1">
+                <div key={c.id} className="p-3 rounded-lg text-sm flex gap-3 items-start group" style={{ backgroundColor: 'var(--secondary)' }}>
+                  <div className="flex-shrink-0">
                     {c.commentUser?.avatar_url ? (
-                      <img src={c.commentUser.avatar_url} alt={c.commentUser.full_name} className="w-6 h-6 rounded-full object-cover" />
+                      <img src={c.commentUser.avatar_url} alt={c.commentUser.full_name} className="w-8 h-8 rounded-full object-cover" />
                     ) : (
-                      <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold text-white">
+                      <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-xs font-bold text-white">
                         {c.commentUser?.full_name ? c.commentUser.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
                       </div>
                     )}
-                    <span className="text-xs" style={{ color: 'var(--muted)' }}>
-                      {(() => {
-                        const d = new Date(c.created_at);
-                        if (isNaN(d.getTime())) return '—';
-                        return d.toLocaleString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                      })()}
-                    </span>
                   </div>
-                  <div>
-                    <p>{c.content}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-xs" style={{ color: 'var(--primary)' }}>
+                        {c.commentUser?.full_name || 'Usuario'}
+                      </span>
+                      <span className="text-[10px] opacity-70" style={{ color: 'var(--muted)' }}>
+                        {(() => {
+                          const rawDate = c.created_at || c.createdAt || '';
+                          const dateValue = typeof rawDate === 'string' ? rawDate : (rawDate?.toString() || '');
+                          const d = new Date(dateValue);
+                          if (isNaN(d.getTime())) return '—';
+                          return d.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                        })()}
+                      </span>
+                    </div>
+                    <p className="text-sm">{c.content}</p>
                   </div>
                   <button
                     onClick={() => taskId && deleteComment(taskId, c.id)}
-                    className="text-red-400 hover:text-red-600 ml-2 flex-shrink-0"
+                    className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
                   >
-                    <HiOutlineTrash size={14} />
+                    <HiOutlineTrash size={16} />
                   </button>
                 </div>
               ))}
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-4">
               <input
                 type="text"
                 value={newComment}
@@ -342,7 +349,7 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
               />
               <button
                 onClick={handleAddComment}
-                className="px-3 py-1.5 rounded-lg text-white text-sm"
+                className="px-4 py-1.5 rounded-lg text-white text-sm font-medium"
                 style={{ backgroundColor: 'var(--primary)' }}
               >
                 Enviar

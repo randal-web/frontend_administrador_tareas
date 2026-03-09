@@ -660,6 +660,10 @@ export default function AdminPage() {
             ? `¿Estás seguro de que quieres ${confirmAction.value ? 'reactivar' : 'suspender'} esta cuenta?`
             : `¿Conceder acceso al canal Beta?`
         }
+        confirmLabel={
+          confirmAction?.type === 'status' ? (confirmAction.value ? 'Reactivar' : 'Suspender') : 'Confirmar'
+        }
+        variant={confirmAction?.type === 'status' && !confirmAction.value ? 'danger' : 'warning'}
         onConfirm={executePermissionChange}
         onCancel={() => setConfirmAction(null)}
       />

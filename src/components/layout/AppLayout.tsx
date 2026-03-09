@@ -7,11 +7,14 @@ import { useUIStore } from '@/stores/uiStore';
 import Link from 'next/link';
 import Sidebar from './Sidebar';
 import SearchModal from './SearchModal';
+import NotificationDropdown from './NotificationDropdown';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import { useTaskStore } from '@/stores/taskStore';
+import { useNotificationStore } from '@/stores/notificationStore';
 import {
   HiOutlineMenu,
   HiOutlineSearch,
+  HiOutlineBell,
   HiOutlineLogout,
   HiOutlineSun,
   HiOutlineMoon,
@@ -25,7 +28,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth, user, logout } = useAuthStore();
   const { sidebarOpen, toggleSidebar, setMobileSidebarOpen, setIsSearchOpen } = useUIStore();
   const { selectedTaskId, detailModalOpen, closeTaskDetail } = useTaskStore();
+  const { unreadCount, fetchNotifications } = useNotificationStore();
+  
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -37,6 +43,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       checkAuth();
     }
   }, [checkAuth, isPublicPage]);
+
+  useEffect(() => {
+    if (isAuthenticated && !isPublicPage) {
+      fetchNotifications();
+      // Polling for new notifications every 2 minutes
+      const interval = setInterval(fetchNotifications, 120000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, isPublicPage, fetchNotifications]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -124,6 +139,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             >
               <HiOutlineSearch size={18} />
             </button>
+
+            <div className="relative">
+              <button 
+                onClick={() => setNotifOpen(!notifOpen)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 relative"
+                title="Notificaciones"
+              >
+                <HiOutlineBell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              <NotificationDropdown isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
+            </div>
+
             <div ref={userMenuRef} className="relative flex items-center ml-1 sm:pl-2 sm:border-l" style={{ borderColor: 'var(--border)' }}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}

@@ -7,6 +7,8 @@ export interface User {
   provider: string;
   is_beta_tester: boolean;
   role: 'USER' | 'ADMIN';
+  is_active: boolean;
+  last_active_at: string | null;
   created_at: string;
 }
 

@@ -63,7 +63,11 @@ export default function ReportsPage() {
 
   // Generate summary data
   const summaryData = useMemo(() => {
-    const todayTasks = tasks.filter(t => t.start_date <= todayStr && (t.end_date || t.start_date) >= todayStr);
+    const todayTasks = tasks.filter(t => {
+      if (!t.start_date) return false;
+      const end = t.end_date || t.start_date;
+      return t.start_date <= todayStr && end >= todayStr;
+    });
     const completedTasks = todayTasks.filter(t => t.status === 'DONE');
     const pendingTasks = todayTasks.filter(t => t.status !== 'DONE');
     

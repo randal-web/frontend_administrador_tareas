@@ -16,6 +16,8 @@ import {
   HiOutlineRefresh,
   HiOutlineDocumentText,
   HiOutlineExclamationCircle,
+  HiOutlineDocumentReport,
+  HiOutlineShieldCheck,
   HiOutlineCog,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
@@ -222,6 +224,18 @@ export default function Sidebar() {
                 </>
               )}
             </Link>
+            {user?.is_beta_tester && (
+              <Link href="/reports" onClick={handleNavClick} className={navLinkClass('/reports')} style={navLinkStyle('/reports')} title={!sidebarOpen ? 'Reportes' : undefined}>
+                <HiOutlineDocumentReport size={16} />
+                {sidebarOpen && <span className="flex-1">Reportes</span>}
+              </Link>
+            )}
+            {user?.role === 'ADMIN' && (
+              <Link href="/admin" onClick={handleNavClick} className={navLinkClass('/admin')} style={navLinkStyle('/admin')} title={!sidebarOpen ? 'Administración' : undefined}>
+                <HiOutlineShieldCheck size={16} />
+                {sidebarOpen && <span className="flex-1">Administración</span>}
+              </Link>
+            )}
           </div>
 
           {/* CONFIGURACIÓN */}

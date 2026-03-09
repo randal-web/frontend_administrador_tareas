@@ -5,6 +5,8 @@ export interface User {
   full_name: string;
   avatar_url: string | null;
   provider: string;
+  is_beta_tester: boolean;
+  role: 'USER' | 'ADMIN';
   created_at: string;
 }
 
@@ -170,4 +172,17 @@ export interface DaySummary {
   completed: number;
   pending: number;
   date: string;
+}
+
+// Notification
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'beta_invite' | 'success' | 'warning';
+  is_read: boolean;
+  action_url?: string;
+  created_at?: string;
+  createdAt?: string;
 }

@@ -5,6 +5,7 @@ import { User, LoginData, RegisterData, AuthResponse } from '@/types';
 interface AuthState {
   user: User | null;
   isLoading: boolean;
+  isMutating: boolean;
   isAuthenticated: boolean;
 
   login: (data: LoginData) => Promise<void>;
@@ -19,25 +20,38 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: true,
+  isMutating: false,
   isAuthenticated: false,
 
   login: async (data: LoginData) => {
-    const res = await api.post<AuthResponse>('/auth/login', data);
-    set({ user: res.data.user, isAuthenticated: true });
+    set({ isMutating: true });
+    try {
+      const res = await api.post<AuthResponse>('/auth/login', data);
+      set({ user: res.data.user, isAuthenticated: true });
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   register: async (data: RegisterData) => {
-    const res = await api.post<AuthResponse>('/auth/register', data);
-    set({ user: res.data.user, isAuthenticated: true });
+    set({ isMutating: true });
+    try {
+      const res = await api.post<AuthResponse>('/auth/register', data);
+      set({ user: res.data.user, isAuthenticated: true });
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   logout: async () => {
+    set({ isMutating: true });
     try {
       await api.post('/auth/logout');
     } catch {
       // Continue anyway
+    } finally {
+      set({ user: null, isAuthenticated: false, isMutating: false });
     }
-    set({ user: null, isAuthenticated: false });
   },
 
   checkAuth: async () => {
@@ -50,17 +64,32 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   updateProfile: async (data: Partial<User>) => {
-    const res = await api.put<User>('/auth/profile', data);
-    set({ user: res.data });
+    set({ isMutating: true });
+    try {
+      const res = await api.put<User>('/auth/profile', data);
+      set({ user: res.data });
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   forgotPassword: async (email: string) => {
-    const res = await api.post('/auth/forgot-password', { email });
-    return res.data.message;
+    set({ isMutating: true });
+    try {
+      const res = await api.post('/auth/forgot-password', { email });
+      return res.data.message;
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   resetPassword: async (token: string, password: string) => {
-    const res = await api.post('/auth/reset-password', { token, password });
-    return res.data.message;
+    set({ isMutating: true });
+    try {
+      const res = await api.post('/auth/reset-password', { token, password });
+      return res.data.message;
+    } finally {
+      set({ isMutating: false });
+    }
   },
 }));

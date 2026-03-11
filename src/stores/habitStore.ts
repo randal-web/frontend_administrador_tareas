@@ -6,6 +6,7 @@ interface HabitState {
   habits: Habit[];
   weeklyHabits: Habit[];
   isLoading: boolean;
+  isMutating: boolean;
 
   fetchHabits: () => Promise<void>;
   fetchWeeklyHabits: (weekStart?: string) => Promise<void>;
@@ -19,6 +20,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
   habits: [],
   weeklyHabits: [],
   isLoading: false,
+  isMutating: false,
 
   fetchHabits: async () => {
     set({ isLoading: true });
@@ -41,28 +43,48 @@ export const useHabitStore = create<HabitState>((set, get) => ({
   },
 
   createHabit: async (data) => {
-    await api.post('/habits', data);
-    await get().fetchHabits();
-    await get().fetchWeeklyHabits();
+    set({ isMutating: true });
+    try {
+      await api.post('/habits', data);
+      await get().fetchHabits();
+      await get().fetchWeeklyHabits();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   updateHabit: async (id, data) => {
-    await api.put(`/habits/${id}`, data);
-    await get().fetchHabits();
-    await get().fetchWeeklyHabits();
+    set({ isMutating: true });
+    try {
+      await api.put(`/habits/${id}`, data);
+      await get().fetchHabits();
+      await get().fetchWeeklyHabits();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   deleteHabit: async (id) => {
-    await api.delete(`/habits/${id}`);
-    await get().fetchHabits();
-    await get().fetchWeeklyHabits();
+    set({ isMutating: true });
+    try {
+      await api.delete(`/habits/${id}`);
+      await get().fetchHabits();
+      await get().fetchWeeklyHabits();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   toggleLog: async (habitId, date, weekStart) => {
-    await api.post(`/habits/${habitId}/toggle`, { date });
-    await Promise.all([
-      get().fetchWeeklyHabits(weekStart),
-      get().fetchHabits(),
-    ]);
+    set({ isMutating: true });
+    try {
+      await api.post(`/habits/${habitId}/toggle`, { date });
+      await Promise.all([
+        get().fetchWeeklyHabits(weekStart),
+        get().fetchHabits(),
+      ]);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 }));

@@ -5,6 +5,7 @@ import { Task, TaskCategory, TaskPriority } from '@/types';
 import { useTaskStore } from '@/stores/taskStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { HiOutlineX } from 'react-icons/hi';
+import { Button } from '@/components/ui/Button';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -13,9 +14,8 @@ interface CreateTaskModalProps {
 }
 
 export default function CreateTaskModal({ isOpen, onClose, defaultDate }: CreateTaskModalProps) {
-  const { createTask } = useTaskStore();
+  const { createTask, isMutating } = useTaskStore();
   const { projects } = useProjectStore();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
@@ -39,7 +39,6 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     try {
       await createTask({
@@ -61,8 +60,6 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
       });
     } catch {
       setError('Error al crear la tarea. Inténtalo de nuevo.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -229,22 +226,21 @@ export default function CreateTaskModal({ isOpen, onClose, defaultDate }: Create
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg border text-sm font-medium"
-              style={{ borderColor: 'var(--border)' }}
+              variant="outline"
+              fullWidth
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={loading}
-              className="flex-1 py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-50"
-              style={{ backgroundColor: 'var(--primary)' }}
+              isLoading={isMutating}
+              fullWidth
             >
-              {loading ? 'Creando...' : 'Crear tarea'}
-            </button>
+              Crear tarea
+            </Button>
           </div>
         </form>
       </div>

@@ -6,27 +6,24 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { HiOutlineMail, HiOutlineLockClosed } from 'react-icons/hi';
 import { FcGoogle } from 'react-icons/fc';
+import { Button } from '@/components/ui/Button';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuthStore();
+  const { login, isMutating } = useAuthStore();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     try {
       await login({ email, password });
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al iniciar sesión');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -90,14 +87,13 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full py-2.5 rounded-lg text-white font-medium text-sm transition-colors disabled:opacity-50"
-              style={{ backgroundColor: 'var(--primary)' }}
+              isLoading={isMutating}
+              fullWidth
             >
-              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-            </button>
+              Iniciar sesión
+            </Button>
           </form>
 
           <div className="my-6 flex items-center">

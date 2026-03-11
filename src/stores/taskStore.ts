@@ -9,6 +9,7 @@ interface TaskState {
   upcomingTasks: Task[];
   daySummary: DaySummary | null;
   isLoading: boolean;
+  isMutating: boolean;
   currentDate: string;
   selectedTaskId: string | null;
   detailModalOpen: boolean;
@@ -40,6 +41,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   upcomingTasks: [],
   daySummary: null,
   isLoading: false,
+  isMutating: false,
   currentDate: getLocalDateString(),
   selectedTaskId: null,
   detailModalOpen: false,
@@ -100,62 +102,107 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   createTask: async (data) => {
-    await api.post('/tasks', data);
-    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
-    await fetchTasksByDate(currentDate);
-    await fetchDaySummary(currentDate);
-    await fetchUpcoming(currentDate);
+    set({ isMutating: true });
+    try {
+      await api.post('/tasks', data);
+      const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
+      await fetchTasksByDate(currentDate);
+      await fetchDaySummary(currentDate);
+      await fetchUpcoming(currentDate);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   updateTask: async (id, data) => {
-    await api.put(`/tasks/${id}`, data);
-    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
-    await fetchTasksByDate(currentDate);
-    await fetchDaySummary(currentDate);
-    await fetchUpcoming(currentDate);
+    set({ isMutating: true });
+    try {
+      await api.put(`/tasks/${id}`, data);
+      const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
+      await fetchTasksByDate(currentDate);
+      await fetchDaySummary(currentDate);
+      await fetchUpcoming(currentDate);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   deleteTask: async (id) => {
-    await api.delete(`/tasks/${id}`);
-    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
-    await fetchTasksByDate(currentDate);
-    await fetchDaySummary(currentDate);
-    await fetchUpcoming(currentDate);
+    set({ isMutating: true });
+    try {
+      await api.delete(`/tasks/${id}`);
+      const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming } = get();
+      await fetchTasksByDate(currentDate);
+      await fetchDaySummary(currentDate);
+      await fetchUpcoming(currentDate);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   toggleStatus: async (id, status) => {
-    await api.patch(`/tasks/${id}/status`, { status });
-    const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming, fetchTask } = get();
-    await fetchTask(id);
-    await fetchTasksByDate(currentDate);
-    await fetchDaySummary(currentDate);
-    await fetchUpcoming(currentDate);
+    set({ isMutating: true });
+    try {
+      await api.patch(`/tasks/${id}/status`, { status });
+      const { currentDate, fetchTasksByDate, fetchDaySummary, fetchUpcoming, fetchTask } = get();
+      await fetchTask(id);
+      await fetchTasksByDate(currentDate);
+      await fetchDaySummary(currentDate);
+      await fetchUpcoming(currentDate);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   addSubtask: async (taskId, title) => {
-    await api.post(`/tasks/${taskId}/subtasks`, { title });
-    await get().fetchTask(taskId);
+    set({ isMutating: true });
+    try {
+      await api.post(`/tasks/${taskId}/subtasks`, { title });
+      await get().fetchTask(taskId);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   toggleSubtask: async (taskId, subtaskId) => {
-    await api.patch(`/tasks/${taskId}/subtasks/${subtaskId}/toggle`);
-    await get().fetchTask(taskId);
-    const { currentDate, fetchTasksByDate } = get();
-    await fetchTasksByDate(currentDate);
+    set({ isMutating: true });
+    try {
+      await api.patch(`/tasks/${taskId}/subtasks/${subtaskId}/toggle`);
+      await get().fetchTask(taskId);
+      const { currentDate, fetchTasksByDate } = get();
+      await fetchTasksByDate(currentDate);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   deleteSubtask: async (taskId, subtaskId) => {
-    await api.delete(`/tasks/${taskId}/subtasks/${subtaskId}`);
-    await get().fetchTask(taskId);
+    set({ isMutating: true });
+    try {
+      await api.delete(`/tasks/${taskId}/subtasks/${subtaskId}`);
+      await get().fetchTask(taskId);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   addComment: async (taskId, content) => {
-    await api.post(`/tasks/${taskId}/comments`, { content });
-    await get().fetchTask(taskId);
+    set({ isMutating: true });
+    try {
+      await api.post(`/tasks/${taskId}/comments`, { content });
+      await get().fetchTask(taskId);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   deleteComment: async (taskId, commentId) => {
-    await api.delete(`/tasks/${taskId}/comments/${commentId}`);
-    await get().fetchTask(taskId);
+    set({ isMutating: true });
+    try {
+      await api.delete(`/tasks/${taskId}/comments/${commentId}`);
+      await get().fetchTask(taskId);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 }));

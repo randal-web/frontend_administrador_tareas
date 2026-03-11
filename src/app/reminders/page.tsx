@@ -97,6 +97,7 @@ export default function RemindersPage() {
   const todayReminders = useMemo(() => filteredReminders.filter(r => r.due_date === today), [filteredReminders, today]);
   const tomorrowReminders = useMemo(() => filteredReminders.filter(r => r.due_date === tomorrow), [filteredReminders, tomorrow]);
   const futureReminders = useMemo(() => filteredReminders.filter(r => r.due_date > tomorrow), [filteredReminders, tomorrow]);
+  const overdueReminders = useMemo(() => filteredReminders.filter(r => r.due_date < today && !r.is_completed), [filteredReminders, today]);
 
   const openCreate = () => {
     setEditingReminder(null);
@@ -185,6 +186,23 @@ export default function RemindersPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          {/* ATRASADOS */}
+          {overdueReminders.length > 0 && (
+            <ReminderSection
+              title="Atrasados"
+              count={overdueReminders.length}
+              countHighlight
+              reminders={overdueReminders}
+              openMenuId={openMenuId}
+              setOpenMenuId={setOpenMenuId}
+              menuRef={menuRef}
+              onToggle={toggleComplete}
+              onEdit={openEdit}
+              onDelete={handleDelete}
+              isOverdueSection
+            />
+          )}
+
           {/* HOY */}
           {todayReminders.length > 0 && (
             <ReminderSection
@@ -443,6 +461,7 @@ function ReminderSection({
   onToggle,
   onEdit,
   onDelete,
+  isOverdueSection,
 }: {
   title: string;
   count: number;
@@ -454,17 +473,18 @@ function ReminderSection({
   onToggle: (id: string) => void;
   onEdit: (r: Reminder) => void;
   onDelete: (id: string) => void;
+  isOverdueSection?: boolean;
 }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <HiOutlineCalendar size={15} className="text-gray-400" />
-        <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{title}</h2>
+        <HiOutlineCalendar size={15} className={isOverdueSection ? "text-red-500" : "text-gray-400"} />
+        <h2 className={`text-xs font-bold uppercase tracking-wider ${isOverdueSection ? "text-red-600" : ""}`} style={!isOverdueSection ? { color: 'var(--muted)' } : {}}>{title}</h2>
         <span
           className={`text-xs font-bold min-w-[22px] text-center px-1.5 py-0.5 rounded-md ${
-            countHighlight ? 'bg-black text-white' : ''
+            isOverdueSection ? 'bg-red-600 text-white' : (countHighlight ? 'bg-black text-white' : '')
           }`}
-          style={!countHighlight ? { color: 'var(--muted)', backgroundColor: 'var(--border)' } : {}}
+          style={!countHighlight && !isOverdueSection ? { color: 'var(--muted)', backgroundColor: 'var(--border)' } : {}}
         >
           {count}
         </span>
@@ -509,14 +529,16 @@ function ReminderCard({
   const typeCfg = typeConfig[reminder.type] || typeConfig.reminder;
   const prioCfg = priorityConfig[reminder.priority] || priorityConfig.medium;
   const TypeIcon = typeCfg.icon;
+  const today = getLocalDateString();
+  const isOverdue = reminder.due_date && reminder.due_date < today && !reminder.is_completed;
 
   return (
-    <div className="rounded-xl border p-4 transition-shadow hover:shadow-md" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+    <div className={`rounded-xl border p-4 transition-all hover:shadow-md ${isOverdue ? 'border-red-200 bg-red-50/30' : ''}`} style={{ backgroundColor: isOverdue ? undefined : 'var(--card)', borderColor: isOverdue ? undefined : 'var(--border)' }}>
       {/* Top row: checkbox + tags + menu */}
       <div className="flex items-start gap-3">
         <button
           onClick={() => onToggle(reminder.id)}
-          className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors border-gray-300 hover:border-gray-500"
+          className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${isOverdue ? 'border-red-300 hover:border-red-500' : 'border-gray-300 hover:border-gray-500'}`}
         >
           {reminder.is_completed && <HiOutlineCheck size={12} className="text-green-500" />}
         </button>
@@ -524,6 +546,12 @@ function ReminderCard({
         <div className="flex-1 min-w-0">
           {/* Tags */}
           <div className="flex items-center gap-1.5 mb-2">
+            {isOverdue && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-red-100 text-red-600 animate-pulse">
+                <BsExclamationCircle size={10} />
+                Atrasado
+              </span>
+            )}
             <span
               className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md"
               style={{ color: typeCfg.color, backgroundColor: typeCfg.bg }}
@@ -540,25 +568,34 @@ function ReminderCard({
           </div>
 
           {/* Title */}
-          <h3 className="text-sm font-bold text-[var(--foreground)] mb-0.5">{reminder.title}</h3>
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className={`text-sm font-bold text-[var(--foreground)] truncate ${isOverdue ? 'text-red-900' : ''}`}>{reminder.title}</h3>
+            {isOverdue && <BsExclamationCircle className="text-red-500 flex-shrink-0" size={14} />}
+          </div>
 
           {/* Description */}
           {reminder.description && (
-            <p className="text-xs text-gray-500 mb-2 line-clamp-2">{reminder.description}</p>
+            <p className={`text-xs mb-2 line-clamp-2 ${isOverdue ? 'text-red-700/70' : 'text-gray-500'}`}>{reminder.description}</p>
           )}
 
           {/* Footer: time + project */}
           <div className="flex items-center gap-3 mt-2">
             {reminder.due_time && (
-              <div className="flex items-center gap-1 text-gray-400">
+              <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-600/60' : 'text-gray-400'}`}>
                 <HiOutlineClock size={12} />
                 <span className="text-xs">{reminder.due_time}</span>
               </div>
             )}
             {reminder.project_name && (
-              <div className="flex items-center gap-1 text-gray-400">
+              <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-600/60' : 'text-gray-400'}`}>
                 <HiOutlineFolder size={12} />
                 <span className="text-xs">{reminder.project_name}</span>
+              </div>
+            )}
+            {isOverdue && reminder.due_date && (
+               <div className="flex items-center gap-1 text-red-600/60">
+                <HiOutlineCalendar size={12} />
+                <span className="text-xs">{reminder.due_date.split('-').reverse().join('/')}</span>
               </div>
             )}
           </div>
@@ -568,7 +605,7 @@ function ReminderCard({
         <div className="relative flex-shrink-0">
           <button
             onClick={() => setOpenMenuId(openMenuId === reminder.id ? null : reminder.id)}
-            className="p-1 rounded hover:bg-gray-100 text-gray-400 transition-colors"
+            className={`p-1 rounded transition-colors ${isOverdue ? 'hover:bg-red-100 text-red-400' : 'hover:bg-gray-100 text-gray-400'}`}
           >
             <HiOutlineDotsHorizontal size={16} />
           </button>

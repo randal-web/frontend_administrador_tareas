@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { HiOutlineMail, HiOutlineLockClosed, HiOutlineUser } from 'react-icons/hi';
+import { Button } from '@/components/ui/Button';
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
@@ -12,8 +13,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuthStore();
+  const { register, isMutating } = useAuthStore();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,14 +30,11 @@ export default function RegisterPage() {
       return;
     }
 
-    setLoading(true);
     try {
       await register({ email, password, full_name: fullName });
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al registrarse');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -121,14 +118,13 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full py-2.5 rounded-lg text-white font-medium text-sm transition-colors disabled:opacity-50"
-              style={{ backgroundColor: 'var(--primary)' }}
+              isLoading={isMutating}
+              fullWidth
             >
-              {loading ? 'Registrando...' : 'Registrarse'}
-            </button>
+              Registrarse
+            </Button>
           </form>
         </div>
 

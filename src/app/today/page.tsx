@@ -34,6 +34,13 @@ const priorityConfig: Record<string, { label: string; color: string; bg: string 
   LOW: { label: 'Baja', color: '#16a34a', bg: '#f0fdf4' },
 };
 
+const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+  TODO: { label: 'Por hacer', color: '#6b7280', bg: '#f3f4f6' },
+  IN_PROGRESS: { label: 'En curso', color: '#3b82f6', bg: '#eff6ff' },
+  REVIEW: { label: 'Revisión', color: '#8b5cf6', bg: '#f5f3ff' },
+  DONE: { label: 'Hecha', color: '#10b981', bg: '#ecfdf5' },
+};
+
 const reminderPriorityColors: Record<string, { color: string; bg: string }> = {
   high: { color: '#dc2626', bg: '#fef2f2' },
   medium: { color: '#d97706', bg: '#fffbeb' },
@@ -130,9 +137,13 @@ export default function TodayPage() {
     return filtered;
   }, [reminders, todayStr, searchTerm]);
 
-  // Today's reminders/pendientes (due today, excluding meetings)
+  // Today's reminders/pendientes (due today or overdue, excluding meetings)
   const todayReminders = useMemo(() => {
-    let filtered = reminders.filter(r => r.due_date === todayStr && r.type !== 'meeting' && !r.is_completed);
+    let filtered = reminders.filter(r => 
+      r.type !== 'meeting' && 
+      !r.is_completed && 
+      (r.due_date === todayStr || (r.due_date && r.due_date < todayStr))
+    );
     if (searchTerm) {
       filtered = filtered.filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()));
     }
@@ -293,10 +304,16 @@ export default function TodayPage() {
                             )}
                           </div>
                         </div>
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-md flex-shrink-0"
-                          style={{ color: priority.color, backgroundColor: priority.bg }}>
-                          {priority.label}
-                        </span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md"
+                            style={{ color: priority.color, backgroundColor: priority.bg }}>
+                            {priority.label}
+                          </span>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md"
+                            style={{ color: statusConfig[task.status].color, backgroundColor: statusConfig[task.status].bg }}>
+                            {statusConfig[task.status].label}
+                          </span>
+                        </div>
                         <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                           {user?.avatar_url ? (
                             <img
@@ -410,32 +427,43 @@ export default function TodayPage() {
             <div>
               {todayReminders.length === 0 ? (
                 <div className="px-4 py-6 text-center">
-                  <p className="text-sm" style={{ color: 'var(--muted)' }}>No hay pendientes para hoy</p>
+                  <p className="text-sm" style={{ color: 'var(--muted)' }}>No hay pendientes para hoy ni atrasados</p>
                 </div>
               ) : (
-                todayReminders.map(reminder => (
-                  <div key={reminder.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 hover:border-solid hover:border-2 hover:border-gray-200 rounded-lg transition-colors mx-6 my-2">
-                    <button 
-                      onClick={() => toggleComplete(reminder.id)}
-                      className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0 transition-colors hover:border-amber-400 flex items-center justify-center"
-                    >
-                      {reminder.is_completed && <HiOutlineCheck size={10} className="text-green-500" />}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--foreground)] truncate">{reminder.title}</p>
-                      {reminder.description && (
-                        <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{reminder.description}</p>
+                todayReminders.map(reminder => {
+                  const isOverdue = reminder.due_date && reminder.due_date < todayStr;
+                  return (
+                    <div key={reminder.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 hover:border-solid hover:border-2 hover:border-gray-200 rounded-lg transition-colors mx-6 my-2">
+                      <button 
+                        onClick={() => toggleComplete(reminder.id)}
+                        className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0 transition-colors hover:border-amber-400 flex items-center justify-center"
+                      >
+                        {reminder.is_completed && <HiOutlineCheck size={10} className="text-green-500" />}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-[var(--foreground)] truncate">{reminder.title}</p>
+                          {isOverdue && (
+                            <div className="flex items-center gap-1">
+                              <HiOutlineExclamationCircle size={14} className="text-red-500 animate-pulse" />
+                              <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Atrasado</span>
+                            </div>
+                          )}
+                        </div>
+                        {reminder.description && (
+                          <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{reminder.description}</p>
+                        )}
+                      </div>
+                      {reminder.priority && (
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: isOverdue ? '#fee2e2' : reminderPriorityColors[reminder.priority]?.bg }}>
+                          <HiOutlineExclamationCircle size={16}
+                            style={{ color: isOverdue ? '#ef4444' : reminderPriorityColors[reminder.priority]?.color }} />
+                        </div>
                       )}
                     </div>
-                    {reminder.priority && (
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: reminderPriorityColors[reminder.priority]?.bg }}>
-                        <HiOutlineExclamationCircle size={16}
-                          style={{ color: reminderPriorityColors[reminder.priority]?.color }} />
-                      </div>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

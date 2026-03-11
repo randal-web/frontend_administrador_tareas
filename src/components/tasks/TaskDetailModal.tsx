@@ -5,6 +5,7 @@ import { Task, TaskPriority, TaskCategory } from '@/types';
 import { useTaskStore } from '@/stores/taskStore';
 import { HiOutlineX, HiOutlineCheck, HiOutlineTrash, HiOutlinePlus, HiOutlinePencil } from 'react-icons/hi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { Button } from '@/components/ui/Button';
 
 interface TaskDetailModalProps {
   taskId: string | null;
@@ -32,7 +33,7 @@ const categoryOptions = [
 ];
 
 export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailModalProps) {
-  const { currentTask, fetchTask, updateTask, toggleSubtask, addSubtask, deleteSubtask, addComment, deleteComment, toggleStatus, deleteTask } = useTaskStore();
+  const { currentTask, fetchTask, updateTask, toggleSubtask, addSubtask, deleteSubtask, addComment, deleteComment, toggleStatus, deleteTask, isMutating } = useTaskStore();
   const [newSubtask, setNewSubtask] = useState('');
   const [newComment, setNewComment] = useState('');
   const [editing, setEditing] = useState(false);
@@ -129,8 +130,8 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
           <div className="flex items-center gap-2">
             {editing ? (
               <>
-                <button onClick={handleSave} className="px-3 py-1.5 rounded-lg text-white text-xs font-medium" style={{ backgroundColor: 'var(--primary)' }}>Guardar</button>
-                <button onClick={() => setEditing(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium border" style={{ borderColor: 'var(--border)' }}>Cancelar</button>
+                <Button onClick={handleSave} isLoading={isMutating} size="sm">Guardar</Button>
+                <Button onClick={() => setEditing(false)} variant="outline" size="sm">Cancelar</Button>
               </>
             ) : (
               <button onClick={startEditing} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500" title="Editar tarea"><HiOutlinePencil size={18} /></button>
@@ -218,8 +219,9 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
               {statusOptions.map(opt => (
                 <button
                   key={opt.value}
+                  disabled={isMutating}
                   onClick={() => handleStatusChange(opt.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${
                     currentTask.status === opt.value
                       ? 'text-white'
                       : 'border'
@@ -257,8 +259,9 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
               {currentTask.subtasks?.map(st => (
                 <div key={st.id} className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-gray-50 group">
                   <button
+                    disabled={isMutating}
                     onClick={() => taskId && toggleSubtask(taskId, st.id)}
-                    className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                    className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 disabled:opacity-50 ${
                       st.is_completed ? 'bg-green-500 border-green-500' : 'border-gray-300'
                     }`}
                   >
@@ -268,8 +271,9 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
                     {st.title}
                   </span>
                   <button
+                    disabled={isMutating}
                     onClick={() => taskId && deleteSubtask(taskId, st.id)}
-                    className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity ml-2 disabled:opacity-50"
                   >
                     <HiOutlineTrash size={14} />
                   </button>
@@ -286,13 +290,14 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
                 style={{ borderColor: 'var(--border)' }}
                 placeholder="Nueva subtarea..."
               />
-              <button
+              <Button
                 onClick={handleAddSubtask}
-                className="p-1.5 rounded-lg text-white"
-                style={{ backgroundColor: 'var(--primary)' }}
+                isLoading={isMutating}
+                size="sm"
+                className="p-1.5"
               >
                 <HiOutlinePlus size={16} />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -329,8 +334,9 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
                     <p className="text-sm">{c.content}</p>
                   </div>
                   <button
+                    disabled={isMutating}
                     onClick={() => taskId && deleteComment(taskId, c.id)}
-                    className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                    className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity ml-2 disabled:opacity-50"
                   >
                     <HiOutlineTrash size={16} />
                   </button>
@@ -347,13 +353,12 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
                 style={{ borderColor: 'var(--border)' }}
                 placeholder="Agregar comentario..."
               />
-              <button
+              <Button
                 onClick={handleAddComment}
-                className="px-4 py-1.5 rounded-lg text-white text-sm font-medium"
-                style={{ backgroundColor: 'var(--primary)' }}
+                isLoading={isMutating}
               >
                 Enviar
-              </button>
+              </Button>
             </div>
           </div>
         </div>

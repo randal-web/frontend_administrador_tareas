@@ -5,6 +5,7 @@ import { Note } from '@/types';
 interface NoteState {
   notes: Note[];
   isLoading: boolean;
+  isMutating: boolean;
 
   fetchNotes: () => Promise<void>;
   createNote: (data: Partial<Note>) => Promise<void>;
@@ -17,6 +18,7 @@ interface NoteState {
 export const useNoteStore = create<NoteState>((set, get) => ({
   notes: [],
   isLoading: false,
+  isMutating: false,
 
   fetchNotes: async () => {
     set({ isLoading: true });
@@ -29,27 +31,52 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   },
 
   createNote: async (data) => {
-    await api.post('/notes', data);
-    await get().fetchNotes();
+    set({ isMutating: true });
+    try {
+      await api.post('/notes', data);
+      await get().fetchNotes();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   updateNote: async (id, data) => {
-    await api.put(`/notes/${id}`, data);
-    await get().fetchNotes();
+    set({ isMutating: true });
+    try {
+      await api.put(`/notes/${id}`, data);
+      await get().fetchNotes();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   deleteNote: async (id) => {
-    await api.delete(`/notes/${id}`);
-    await get().fetchNotes();
+    set({ isMutating: true });
+    try {
+      await api.delete(`/notes/${id}`);
+      await get().fetchNotes();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   togglePin: async (id) => {
-    await api.patch(`/notes/${id}/pin`);
-    await get().fetchNotes();
+    set({ isMutating: true });
+    try {
+      await api.patch(`/notes/${id}/pin`);
+      await get().fetchNotes();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   toggleImportant: async (id) => {
-    await api.patch(`/notes/${id}/important`);
-    await get().fetchNotes();
+    set({ isMutating: true });
+    try {
+      await api.patch(`/notes/${id}/important`);
+      await get().fetchNotes();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 }));

@@ -16,6 +16,7 @@ import {
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { BsPinAngle, BsPinAngleFill } from 'react-icons/bs';
 import RichTextEditor from '@/components/ui/RichTextEditor';
+import { Button } from '@/components/ui/Button';
 
 const colorConfig: Record<NoteColor, { bg: string; fold: string; border: string }> = {
   yellow: { bg: '#fefce8', fold: '#fde047', border: '#fef08a' },
@@ -36,7 +37,7 @@ const fmtDate = (d: string) => {
 };
 
 export default function NotesPage() {
-  const { notes, isLoading, fetchNotes, createNote, updateNote, deleteNote, togglePin, toggleImportant } = useNoteStore();
+  const { notes, isLoading, isMutating, fetchNotes, createNote, updateNote, deleteNote, togglePin, toggleImportant } = useNoteStore();
   const { searchTerm } = useUIStore();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -115,7 +116,7 @@ export default function NotesPage() {
           </button>
           <button
             onClick={openCreate}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium text-white transition-colors hover:opacity-90"
+            className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-white transition-colors hover:opacity-90"
             style={{ backgroundColor: 'var(--foreground)' }}
           >
             <HiOutlinePlus size={14} />
@@ -290,21 +291,19 @@ export default function NotesPage() {
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-              <button
+              <Button
                 onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-lg text-sm border hover:bg-gray-50 transition-colors"
-                style={{ borderColor: 'var(--border)' }}
+                variant="outline"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
+                isLoading={isMutating}
                 disabled={!form.title.trim()}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-40"
-                style={{ backgroundColor: 'var(--foreground)' }}
               >
                 {editingNote ? 'Guardar' : 'Crear'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ interface ProjectState {
   projectGantt: GanttTask[];
   projectTasks: Task[];
   isLoading: boolean;
+  isMutating: boolean;
 
   fetchProjects: () => Promise<void>;
   fetchProject: (id: string) => Promise<void>;
@@ -27,6 +28,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   projectGantt: [],
   projectTasks: [],
   isLoading: false,
+  isMutating: false,
 
   fetchProjects: async () => {
     set({ isLoading: true });
@@ -48,19 +50,34 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   createProject: async (data) => {
-    await api.post('/projects', data);
-    await get().fetchProjects();
+    set({ isMutating: true });
+    try {
+      await api.post('/projects', data);
+      await get().fetchProjects();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   updateProject: async (id, data) => {
-    await api.put(`/projects/${id}`, data);
-    await get().fetchProjects();
-    await get().fetchProject(id);
+    set({ isMutating: true });
+    try {
+      await api.put(`/projects/${id}`, data);
+      await get().fetchProjects();
+      await get().fetchProject(id);
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   deleteProject: async (id) => {
-    await api.delete(`/projects/${id}`);
-    await get().fetchProjects();
+    set({ isMutating: true });
+    try {
+      await api.delete(`/projects/${id}`);
+      await get().fetchProjects();
+    } finally {
+      set({ isMutating: false });
+    }
   },
 
   fetchProjectBoard: async (id: string) => {

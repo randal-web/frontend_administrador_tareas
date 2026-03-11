@@ -7,9 +7,10 @@ import { useProjectStore } from '@/stores/projectStore';
 import { useAuthStore } from '@/stores/authStore';
 import { HiOutlinePlus, HiOutlineFolder, HiOutlineTrash, HiOutlinePencil, HiOutlineX, HiOutlineCalendar, HiOutlineDotsHorizontal, HiOutlineEye, HiOutlineArchive, HiOutlineChevronDown, HiOutlineChevronRight } from 'react-icons/hi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { Button } from '@/components/ui/Button';
 
 export default function ProjectsPage() {
-  const { projects, isLoading, fetchProjects, createProject, updateProject, deleteProject } = useProjectStore();
+  const { projects, isLoading, isMutating, fetchProjects, createProject, updateProject, deleteProject } = useProjectStore();
   const { user } = useAuthStore();
   const userInitials = user?.full_name
     ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -167,13 +168,12 @@ export default function ProjectsPage() {
                 ))}
               </div>
             </div>
-            <button
+            <Button
               type="submit"
-              className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-              style={{ backgroundColor: 'var(--primary)' }}
+              isLoading={isMutating}
             >
               {editingId ? 'Guardar cambios' : 'Crear proyecto'}
-            </button>
+            </Button>
           </form>
         </div>
       )}

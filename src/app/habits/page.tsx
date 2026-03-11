@@ -8,6 +8,7 @@ import { format, startOfWeek, addDays, addWeeks, isBefore, isAfter, isSameDay } 
 import { es } from 'date-fns/locale';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiCheck, HiX, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { Button } from '@/components/ui/Button';
 
 const dayLabelsShort = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 const dayLabelsFull = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -19,7 +20,7 @@ const colors = [
 ];
 
 export default function HabitsPage() {
-  const { habits, weeklyHabits, fetchHabits, fetchWeeklyHabits, createHabit, updateHabit, deleteHabit, toggleLog, isLoading: loading } = useHabitStore();
+  const { habits, weeklyHabits, fetchHabits, fetchWeeklyHabits, createHabit, updateHabit, deleteHabit, toggleLog, isMutating } = useHabitStore();
   const { searchTerm } = useUIStore();
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -85,6 +86,7 @@ export default function HabitsPage() {
   };
 
   const handleToggle = async (habitId: string, date: string) => {
+    if (isMutating) return;
     await toggleLog(habitId, date);
     fetchWeeklyHabits(weekStartStr);
   };
@@ -175,7 +177,7 @@ export default function HabitsPage() {
       </div>
 
       {/* Habit Rows */}
-      {weeklyHabits.length === 0 && !loading && (
+      {weeklyHabits.length === 0 && (
         <div className="text-center py-12 rounded-xl border" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', color: 'var(--muted)' }}>
           <p className="text-sm">No tienes hábitos aún.</p>
           <p className="text-xs mt-1">Crea uno para empezar a hacer seguimiento.</p>
@@ -228,8 +230,9 @@ export default function HabitsPage() {
                     return (
                       <div key={day.date} className="flex justify-center">
                         <button
+                          disabled={isMutating}
                           onClick={() => handleToggle(habit.id, day.date)}
-                          className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition-colors"
+                          className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition-colors disabled:opacity-50"
                         >
                           <HiCheck size={16} strokeWidth={2} />
                         </button>
@@ -242,8 +245,9 @@ export default function HabitsPage() {
                     return (
                       <div key={day.date} className="flex justify-center">
                         <button
+                          disabled={isMutating}
                           onClick={() => handleToggle(habit.id, day.date)}
-                          className="w-8 h-8 rounded-full border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 transition-colors"
+                          className="w-8 h-8 rounded-full border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50"
                         />
                       </div>
                     );
@@ -254,8 +258,9 @@ export default function HabitsPage() {
                     return (
                       <div key={day.date} className="flex justify-center">
                         <button
+                          disabled={isMutating}
                           onClick={() => handleToggle(habit.id, day.date)}
-                          className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 transition-colors"
+                          className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 transition-colors disabled:opacity-50"
                         />
                       </div>
                     );
@@ -265,8 +270,9 @@ export default function HabitsPage() {
                   return (
                     <div key={day.date} className="flex justify-center">
                       <button
+                        disabled={isMutating}
                         onClick={() => handleToggle(habit.id, day.date)}
-                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors disabled:opacity-50"
                       />
                     </div>
                   );
@@ -374,17 +380,15 @@ export default function HabitsPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 rounded-lg text-sm border" style={{ borderColor: 'var(--border)' }}>
+                <Button type="button" onClick={() => setCreateOpen(false)} variant="outline">
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 rounded-lg text-sm text-white font-medium disabled:opacity-50"
-                  style={{ backgroundColor: 'var(--primary)' }}
+                  isLoading={isMutating}
                 >
                   {editingHabit ? 'Guardar' : 'Crear'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

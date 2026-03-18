@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
+import Link from 'next/link';
 import { format, addDays, subDays, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useTaskStore } from '@/stores/taskStore';
 import { useHabitStore } from '@/stores/habitStore';
+import { useGoalStore } from '@/stores/goalStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -29,6 +31,7 @@ import {
   HiOutlineEye,
   HiOutlinePencil,
   HiOutlineTrash,
+  HiOutlineFlag,
 } from 'react-icons/hi';
 
 const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -66,6 +69,7 @@ export default function DashboardPage() {
     deleteTask,
   } = useTaskStore();
   const { weeklyHabits, habits, fetchWeeklyHabits, fetchHabits, toggleLog } = useHabitStore();
+  const { goals, fetchGoals, toggleGoal } = useGoalStore();
   const { projects, fetchProjects } = useProjectStore();
   const { user } = useAuthStore();
 
@@ -153,8 +157,9 @@ export default function DashboardPage() {
     fetchDaySummary(currentDate);
     fetchWeeklyHabits(weekStartStr);
     fetchHabits();
+    fetchGoals();
     fetchProjects();
-  }, [currentDate, weekStartStr, fetchTasksByDate, fetchUpcoming, fetchDaySummary, fetchWeeklyHabits, fetchHabits, fetchProjects]);
+  }, [currentDate, weekStartStr, fetchTasksByDate, fetchUpcoming, fetchDaySummary, fetchWeeklyHabits, fetchHabits, fetchGoals, fetchProjects]);
 
   const formattedDate = useMemo(() => {
     const d = new Date(currentDate + 'T00:00:00');
@@ -869,6 +874,41 @@ export default function DashboardPage() {
                     <span className="text-xs text-black font-bold border-1 border-solid px-2 rounded-2xl border-gray-300 flex-shrink-0 ml-2">
                       {habit.week?.filter(d => d.is_completed).length || 0} días
                     </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Goals */}
+          <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between mb-7">
+              <div className="flex items-center gap-2">
+                <HiOutlineFlag size={14} className="text-blue-500" />
+                <h3 className="text-sm font-semibold">Metas</h3>
+              </div>
+              <Link href="/metas" className="text-xs text-black font-semibold hover:underline">Ver todas</Link>
+            </div>
+            {goals.length === 0 ? (
+              <p className="text-xs text-gray-400">No hay metas configuradas</p>
+            ) : (
+              <div className="space-y-5">
+                {goals.slice(0, 5).map(goal => (
+                  <div key={goal.id} className={`flex items-center justify-between ${goal.is_completed ? 'bg-blue-50/50' : ''} p-1.5 rounded-lg`}>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <button
+                        onClick={() => toggleGoal(goal.id)}
+                        className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${goal.is_completed
+                          ? 'bg-blue-500 border-blue-500'
+                          : 'border-gray-300 hover:border-blue-500'
+                          }`}
+                      >
+                        {goal.is_completed && <HiOutlineCheck size={8} className="text-white" />}
+                      </button>
+                      <span className={`text-sm truncate ${goal.is_completed ? 'text-gray-400 line-through' : 'text-[var(--foreground)]'}`}>
+                        {goal.title}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -7,6 +7,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { useHabitStore } from '@/stores/habitStore';
+import { useGoalStore } from '@/stores/goalStore';
 import { useNoteStore } from '@/stores/noteStore';
 import { useReminderStore } from '@/stores/reminderStore';
 import {
@@ -18,6 +19,7 @@ import {
   HiOutlineExclamationCircle,
   HiOutlineDocumentReport,
   HiOutlineShieldCheck,
+  HiOutlineFlag,
   HiOutlineCog,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
@@ -31,6 +33,7 @@ export default function Sidebar() {
   const { user } = useAuthStore();
   const { projects } = useProjectStore();
   const { habits } = useHabitStore();
+  const { goals } = useGoalStore();
   const { reminders } = useReminderStore();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isMac = typeof window !== 'undefined' && (navigator.platform.toUpperCase().indexOf('MAC') >= 0 || navigator.userAgent.toUpperCase().indexOf('MAC') >= 0);
@@ -205,11 +208,23 @@ export default function Sidebar() {
                   <span className="flex-1">Hábitos</span>
                   {habits.length > 0 && (
                     <span className={badgeClass('/habits')}>{habits.length}</span>
-                  )}
-                </>
-              )}
-            </Link>
-            <Link href="/notes" onClick={handleNavClick} className={navLinkClass('/notes')} style={navLinkStyle('/notes')} title={!sidebarOpen ? 'Notas' : undefined}>
+                    )}
+                    </>
+                    )}
+                    </Link>
+                    <Link href="/metas" onClick={handleNavClick} className={navLinkClass('/metas')} style={navLinkStyle('/metas')} title={!sidebarOpen ? 'Metas' : undefined}>
+                    <HiOutlineFlag size={16} />
+                    {sidebarOpen && (
+                    <>
+                    <span className="flex-1">Metas</span>
+                    {goals.length > 0 && (
+                    <span className={badgeClass('/metas')}>{goals.length}</span>
+                    )}
+                    </>
+                    )}
+                    </Link>
+                    <Link href="/notes" onClick={handleNavClick} className={navLinkClass('/notes')}
+ style={navLinkStyle('/notes')} title={!sidebarOpen ? 'Notas' : undefined}>
               <HiOutlineDocumentText size={16} />
               {sidebarOpen && <span className="flex-1">Notas</span>}
             </Link>

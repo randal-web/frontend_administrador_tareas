@@ -106,6 +106,18 @@ export interface GanttTask {
   priority: TaskPriority;
 }
 
+// Goal
+export interface Goal {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  target_date: string | null;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // Habit
 export interface Habit {
   id: string;

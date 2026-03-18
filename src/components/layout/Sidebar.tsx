@@ -213,16 +213,17 @@ export default function Sidebar() {
                     )}
                     </Link>
                     <Link href="/metas" onClick={handleNavClick} className={navLinkClass('/metas')} style={navLinkStyle('/metas')} title={!sidebarOpen ? 'Metas' : undefined}>
-                    <HiOutlineFlag size={16} />
-                    {sidebarOpen && (
-                    <>
-                    <span className="flex-1">Metas</span>
-                    {goals.length > 0 && (
-                    <span className={badgeClass('/metas')}>{goals.length}</span>
-                    )}
-                    </>
-                    )}
+                      <HiOutlineFlag size={16} />
+                      {sidebarOpen && (
+                        <>
+                          <span className="flex-1">Metas</span>
+                          {goals.length > 0 && (
+                            <span className={badgeClass('/metas')}>{goals.length}</span>
+                          )}
+                        </>
+                      )}
                     </Link>
+
                     <Link href="/notes" onClick={handleNavClick} className={navLinkClass('/notes')}
  style={navLinkStyle('/notes')} title={!sidebarOpen ? 'Notas' : undefined}>
               <HiOutlineDocumentText size={16} />
@@ -242,7 +243,12 @@ export default function Sidebar() {
             {user?.is_beta_tester && (
               <Link href="/reports" onClick={handleNavClick} className={navLinkClass('/reports')} style={navLinkStyle('/reports')} title={!sidebarOpen ? 'Reportes' : undefined}>
                 <HiOutlineDocumentReport size={16} />
-                {sidebarOpen && <span className="flex-1">Reportes</span>}
+                {sidebarOpen && (
+                  <span className="flex-1 flex items-center gap-2">
+                    Reportes
+                    <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-md leading-none">BETA</span>
+                  </span>
+                )}
               </Link>
             )}
             {user?.role === 'ADMIN' && (
